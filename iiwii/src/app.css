@@ -35,3 +35,7 @@ h1 {
     width: 100vw;
     height: 100vh;
 }
+
+[contenteditable]:focus {
+    outline: 0px solid transparent;
+}

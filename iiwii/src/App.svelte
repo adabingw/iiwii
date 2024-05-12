@@ -1,6 +1,5 @@
 <script>
-import Header from "./header/Header.svelte";
-
+import Editor from "./editor/Editor.svelte";
 </script>
 
 <div>
@@ -11,7 +10,7 @@ import Header from "./header/Header.svelte";
 </div>
 
 <div>
-    <Header />
+    <Editor />
 </div>
 
 <style>
