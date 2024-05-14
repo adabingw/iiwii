@@ -6,8 +6,7 @@ import {v4 as uuidv4} from 'uuid';
 
 import Paragraph from "./Paragraph.svelte";
   // @ts-ignore
-  import { afterUpdate } from "svelte";
-  import { focusEnd } from "../utils/utils";
+import { focusEnd, focuspos, getCursorPos, getPosFromIndex, getTotalLines } from "../utils/utils";
 
 let blocks = setup;
 
@@ -64,6 +63,63 @@ const ondelete = (e, index) => {
     blocks = [...blocks]
 }
 
+const updown = (e, index, direction) => {
+    if (direction == 'up') {
+        if (index == 0) return;
+        let pos = e.detail.index;
+        let block = document.getElementById(blocks[index - 1].id.toString());
+        if (block) {
+            let len = block.textContent.length;
+            console.log('len', len, pos)
+            if (pos >= len) {
+                focusEnd(block);
+            } else {
+                let lines = Math.ceil(getTotalLines(block));
+                console.log(lines)
+                if (lines > 1) {
+                    pos = getPosFromIndex(pos, block, lines);
+                }
+                console.log(pos);
+                focuspos(block, 33);
+                console.log(getCursorPos(block))
+            }
+        }
+    } else if (direction == 'down') {
+        if (index == blocks.length - 1) return;
+        let pos = e.detail.index;
+        let block = document.getElementById(blocks[index + 1].id.toString());
+        if (block) {
+            let len = block.textContent;
+            if (pos > len) {
+                focusEnd(block);
+            } else {
+                focuspos(block, pos);
+            }
+        }
+    }
+}
+
+// TODO: keep a record of the length 
+const leftright = (index, direction) => {
+    if (direction == 'left') {
+        if (index == 0) return;
+        let block = document.getElementById(blocks[index - 1].id.toString());
+        if (block) {
+            let len = 0
+            blocks[index - 1].content.forEach((val) => {
+                len += val.content.length;
+            })
+            focusEnd(block);
+        }
+    } else {
+        if (index == blocks.length - 1) return;
+        let block = document.getElementById(blocks[index + 1].id.toString());
+        if (block) {
+            block.focus();
+        }
+    }
+}
+
 </script>
 
 <div class="px-72 pt-10" id='breh'>
@@ -71,7 +127,9 @@ const ondelete = (e, index) => {
     {#if item.type == 'text'}
         <Paragraph id={item.id} contents={item.content} 
             on:enter={(e) => enterPresed(item.type, index)}
-            on:delete={(e) => ondelete(e, index)} />
+            on:delete={(e) => ondelete(e, index)} 
+            on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
+            on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
     {/if}
 {/each}
 </div>

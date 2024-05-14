@@ -1,37 +1,58 @@
 <script>
 // @ts-nocheck
 
-import { createEventDispatcher } from 'svelte';
-import { focusEnd, focuspos, getCaretCharacterOffsetWithin } from '../utils/utils';
+import { createEventDispatcher, onMount } from 'svelte';
+import { focusEnd, focuspos, getCursorPos, getLine, getTotalLines, getIndexInCurrentLine, getWrapped, getCurrRow } from '../utils/utils';
 
 export let contents = [];
 export let id;
 
+let lengths = [];
 const dispatch = createEventDispatcher();
 
 const keydown = (e) => {
+    
     let element = document.getElementById(id);
-    console.log(element);
+    console.log(element.childNodes)
+    let wrap = getWrapped(element)
     if (element) {
-        console.log(getCaretCharacterOffsetWithin(element));
-    }
-    if (e.key == 'Backspace') {
-        let element = getActiveDiv();
-        if (element && (element.innerText.length == 1 || element.innerText.trimEnd().length == 0)) {
-            dispatch('delete', { index: element.title })
+        let caret = getCursorPos(element);
+        if (e.key == 'ArrowUp') {
+            let currLine = getCurrRow(caret, wrap);
+            console.log(currLine)
+            if (currLine == 1) {
+                dispatch('up', { index: caret })
+            }
+        } else if (e.key == 'ArrowDown') {
+            let lines = Math.ceil(getTotalLines(element));
+            let currLine = getLine(element);
+            let lineIndex = getIndexInCurrentLine(caret, currLine, element);
+            if (currLine == lines || (currLine == lines - 1 && lineIndex == 0 && caret != 0)) {
+                dispatch('down', { index: lineIndex })
+            }
+        } else if (e.key == 'ArrowRight') {
+            // TODO: len
+            // if (caret == len) {
+            //     dispatch('right')
+            // }
+        } else if (e.key == 'ArrowLeft') {
+            if (caret == 0) {
+                dispatch('left')
+            }
+        } else if (e.key == 'Backspace') {
+            let element = getActiveDiv();
+            if (element && (element.innerText.length == 1 || element.innerText.trimEnd().length == 0)) {
+                dispatch('delete', { index: element.title })
+            }
+        } else if (e.key == 'Enter') {
+            let element = getActiveDiv();
+            if (element) {
+                element.blur();
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            dispatch('enter')
         }
-    } else if (e.key == 'Enter') {
-        let element = getActiveDiv();
-        if (element) {
-            element.blur();
-        }
-        e.preventDefault();
-        e.stopPropagation();
-        dispatch('enter')
-    } else if (e.key == 'ArrowUp') {
-
-    } else if (e.key == 'ArrowDown') {
-        
     }
 }
 
@@ -75,9 +96,16 @@ const getActiveDiv = () => {
 const input = (e) => {
     let element = getActiveDiv();
     if (element && contents[element.title]) {
-        console.log(element.textContent)
         if (element.textContent == '') contents[element.title].content = ' ';
-        else contents[element.title].content = element.textContent.trimEnd();
+        else contents[element.title].content = element.textContent;
+    }
+}
+
+$: {
+    contents;
+    lengths = [];
+    for (const content of contents) {
+        lengths.push(content.content.length);
     }
 }
 
@@ -87,9 +115,10 @@ const input = (e) => {
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div on:mousedown={focuslast} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all'>
+<div on:mousedown={focuslast} class='hover:cursor-text  cursor-text whitespace-pre-wrap text-wrap break-all'>
 <span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
-on:keydown={keydown} on:input={(e) => input(e)}>
+on:keydown={keydown} on:input={(e) => input(e)}
+style={`line-height: 18px;`}>
     {#each contents as content, index}
     <span 
         class={`${content.style.bold ? 'font-bold' : ''} 
@@ -97,7 +126,7 @@ on:keydown={keydown} on:input={(e) => input(e)}>
                 ${content.style.underline ? 'underline underline-offset-8' : ''} 
                 whitespace-pre-wrap editableSpan text-wrap break-all`} 
         style={`color: ${content.style.color}`} 
-        contenteditable="true" title={index.toString()} id={content.id}>{#if content.content.length != 0}{content.content}{/if}</span>
+        title={index.toString()} id={content.id}>{#if content.content.length != 0}{content.content}{/if}</span>
     {/each}
 </span>
 </div>
