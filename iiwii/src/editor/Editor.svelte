@@ -1,42 +1,24 @@
 <script>
 import { setup } from "../utils/constants";
-// @ts-ignore
-// @ts-ignore
 import {v4 as uuidv4} from 'uuid';
-
 import Paragraph from "./Paragraph.svelte";
-  // @ts-ignore
-import { focusEnd, focuspos, getCursorPos, getPosFromIndex, getTotalLines } from "../utils/utils";
+import { focusEnd, focuspos, getOffset, getOffsetFromIndex, getTotalLines, getWrapped } from "../utils/utils";
 
 let blocks = setup;
 
-// @ts-ignore
-// @ts-ignore
-const enterPresed = (type, index) => {
+const enterPresed = (e, index) => {
     let id = uuidv4();
-    let id2 = uuidv4();
+    let bs = e.detail.blocks;
+    console.log(bs);
     blocks.splice(index + 1, 0, {
         type: 'text',
-        id,
-        content: [
-            {
-                content: ' ',
-                id: id2,
-                style: {
-                    'bold': false, 
-                    'italics': false,
-                    'underline': false,
-                    'color': '#000000'
-                }
-            }
-        ]
+        id: id, 
+        content: bs
     })
     blocks = [...blocks];
     setTimeout(() => {
         let newline = document.getElementById(id.toString());
         if (newline) {
-            console.log('found newline');
-            console.log(newline)
             newline.focus();
         }
     }, 100);
@@ -68,20 +50,18 @@ const updown = (e, index, direction) => {
         if (index == 0) return;
         let pos = e.detail.index;
         let block = document.getElementById(blocks[index - 1].id.toString());
+        let wrap = getWrapped(block)
+    
         if (block) {
             let len = block.textContent.length;
-            console.log('len', len, pos)
+            let lines = Math.ceil(getTotalLines(block));
+            if (lines > 1) {
+                pos = getOffsetFromIndex(pos, wrap);
+            }
             if (pos >= len) {
                 focusEnd(block);
             } else {
-                let lines = Math.ceil(getTotalLines(block));
-                console.log(lines)
-                if (lines > 1) {
-                    pos = getPosFromIndex(pos, block, lines);
-                }
-                console.log(pos);
-                focuspos(block, 33);
-                console.log(getCursorPos(block))
+                focusEnd(block);
             }
         }
     } else if (direction == 'down') {
@@ -125,8 +105,8 @@ const leftright = (index, direction) => {
 <div class="px-72 pt-10" id='breh'>
 {#each blocks as item, index}
     {#if item.type == 'text'}
-        <Paragraph id={item.id} contents={item.content} 
-            on:enter={(e) => enterPresed(item.type, index)}
+        <Paragraph id={item.id} bind:contents={item.content} 
+            on:enter={(e) => enterPresed(e, index)}
             on:delete={(e) => ondelete(e, index)} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>

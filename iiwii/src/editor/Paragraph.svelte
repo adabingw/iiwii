@@ -1,8 +1,8 @@
 <script>
-// @ts-nocheck
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { focusEnd, focuspos, getCursorPos, getLine, getTotalLines, getIndexInCurrentLine, getWrapped, getCurrRow } from '../utils/utils';
+import { focusEnd, focuspos, getActiveDiv, getOffset, getTotalLines, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex } from '../utils/utils';
+import {v4 as uuidv4} from 'uuid';
 
 export let contents = [];
 export let id;
@@ -11,47 +11,71 @@ let lengths = [];
 const dispatch = createEventDispatcher();
 
 const keydown = (e) => {
-    
     let element = document.getElementById(id);
-    console.log(element.childNodes)
     let wrap = getWrapped(element)
     if (element) {
-        let caret = getCursorPos(element);
+        let caret = getOffset(element);
         if (e.key == 'ArrowUp') {
             let currLine = getCurrRow(caret, wrap);
-            console.log(currLine)
             if (currLine == 1) {
                 dispatch('up', { index: caret })
             }
         } else if (e.key == 'ArrowDown') {
             let lines = Math.ceil(getTotalLines(element));
-            let currLine = getLine(element);
-            let lineIndex = getIndexInCurrentLine(caret, currLine, element);
+            let currLine = getCurrRow(caret, wrap);
+            let lineIndex = getIndexFromOffset(caret, currLine, element);
+            console.log(lines, currLine, lineIndex)
             if (currLine == lines || (currLine == lines - 1 && lineIndex == 0 && caret != 0)) {
                 dispatch('down', { index: lineIndex })
             }
         } else if (e.key == 'ArrowRight') {
-            // TODO: len
-            // if (caret == len) {
-            //     dispatch('right')
-            // }
+            let len = lengths.reduce((p, a) => a + p, 0);
+            if (caret == len) {
+                dispatch('right')
+            }
         } else if (e.key == 'ArrowLeft') {
             if (caret == 0) {
                 dispatch('left')
             }
         } else if (e.key == 'Backspace') {
             let element = getActiveDiv();
+            // @ts-ignore
             if (element && (element.innerText.length == 1 || element.innerText.trimEnd().length == 0)) {
+                // @ts-ignore
                 dispatch('delete', { index: element.title })
             }
         } else if (e.key == 'Enter') {
             let element = getActiveDiv();
             if (element) {
-                element.blur();
+                // element.blur();
+                let caret = getOffset(element);
+                let bs = [];
+                let cutoff = 0;
+                for (let i = 0; i < contents.length; i++) {
+                    let id = uuidv4();
+                    // @ts-ignore
+                    if (contents[i].id == element.id) {
+                        cutoff = i;
+                        bs.push({...contents[i]});
+                        bs[0].id = id;
+                        let c = contents[i].content;
+                        bs[0].content = c.substring(caret).length > 0 ? c.substring(caret) : ' ';
+                        contents[i].content = c.substring(0, caret).length > 0 ? c.substring(0, caret) : ' ';
+                    }
+                    if (i > cutoff) {
+                        bs.push(contents[i]);
+                        bs[bs.length - 1].id = id;
+                    }
+                }
+                if (cutoff < contents.length - 2) contents.splice(cutoff + 1);
+                contents = [...contents];
+
+                e.preventDefault();
+                e.stopPropagation();
+                dispatch('enter', { 
+                    blocks: [...bs]
+                });
             }
-            e.preventDefault();
-            e.stopPropagation();
-            dispatch('enter')
         }
     }
 }
@@ -78,33 +102,20 @@ const focuslast = (e) => {
     } 
 }
 
-const getActiveDiv = () => {
-    let sel = window.getSelection();
-    let range = sel.getRangeAt(0);
-    let node = document.createElement('span');
-    range.insertNode(node);
-    range = range.cloneRange();
-    range.selectNodeContents(node);
-    range.collapse(false);
-    sel.removeAllRanges();
-    sel.addRange(range);
-    let activeDiv = node.parentNode;
-    node.parentNode.removeChild(node);
-    return activeDiv;
-}
-
 const input = (e) => {
     let element = getActiveDiv();
     if (element && contents[element.title]) {
-        if (element.textContent == '') contents[element.title].content = ' ';
-        else contents[element.title].content = element.textContent;
+        if (element.textContent == '' || element.textContent.trimEnd() == '') contents[element.title].content = ' ';
+        else contents[element.title].content = element.textContent.trimEnd();
     }
 }
 
 $: {
     contents;
     lengths = [];
+    console.log(contents)
     for (const content of contents) {
+        console.log(content.content)
         lengths.push(content.content.length);
     }
 }

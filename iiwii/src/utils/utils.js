@@ -1,20 +1,21 @@
+// @ts-nocheck
 export const focusEnd = (element) => {
     element.focus();
-    if (typeof window.getSelection != "undefined" && typeof document.createRange != "undefined") {
-        let range = document.createRange();
+    if (typeof window.getSelection != "undefined"
+            && typeof document.createRange != "undefined") {
+        var range = document.createRange();
         range.selectNodeContents(element);
         range.collapse(false);
-        let sel = window.getSelection();
+        var sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
-    // @ts-ignore
     } else if (typeof document.body.createTextRange != "undefined") {
-        // @ts-ignore
-        let textRange = document.body.createTextRange();
+        var textRange = document.body.createTextRange();
         textRange.moveToElementText(element);
         textRange.collapse(false);
         textRange.select();
     }
+    
 }
 
 export const focuspos = (element, pos) => {
@@ -29,7 +30,7 @@ export const focuspos = (element, pos) => {
                 sel.removeAllRanges();
                 sel.addRange(range);
                 return -1; // we are done
-            }else{
+            } else{
                 pos -= node.length;
             }
         } else{
@@ -42,7 +43,7 @@ export const focuspos = (element, pos) => {
     return pos; // needed because of recursion stuff
 }
 
-export const getCursorPos = (element) => {
+export const getOffset = (element) => {
     if (!element) return -1;
     let caretOffset = 0;
     if (typeof window.getSelection() != "undefined") {
@@ -67,7 +68,7 @@ export const getCursorPos = (element) => {
 export const getCurrRow = (cursorIndex, wrapped) => {
     let cum = 0;
     for (let i = 0; i < wrapped.length; i++) {
-        if (cum + wrapped[i].length > cursorIndex) return i + 1;
+        if (cum + wrapped[i].length >= cursorIndex) return i + 1;
         else cum += wrapped[i].length;
     }
     return 1;
@@ -83,10 +84,10 @@ export const getTotalLines = (element) => {
 // get cursorIndex from position in (last) line
 export const getOffsetFromIndex = (index, wrapped) => {
     let cum = 0;
-    for (let i = 0; i < wrapped - 1; i++) {
+    for (let i = 0; i < wrapped.length - 1; i++) {
         cum += wrapped[i].length;
     }
-    return cum + index;
+    return cum + index - 1;
 }
 
 // get index from offset
@@ -127,7 +128,6 @@ export const getWrapped = (element) => {
             for (let i = 0; i < text.length; i++) {
 
                 nodespan.textContent += text[i];
-                console.log(text[i], spanrow.offsetWidth)
                 if (spanrow.offsetWidth >= elWidth) {
                     lines.push(spanrow.textContent)
                     while (spanrow.firstChild) {
@@ -142,4 +142,40 @@ export const getWrapped = (element) => {
     lines.push(spanrow.textContent);
     app.removeChild(spanrow);
     return lines;
+}
+
+export const getActiveDiv = () => {
+    let sel = window.getSelection();
+    let range = sel.getRangeAt(0);
+    let node = document.createElement('span');
+    range.insertNode(node);
+    range = range.cloneRange();
+    range.selectNodeContents(node);
+    range.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    let activeDiv = node.parentNode;
+    node.parentNode.removeChild(node);
+    return activeDiv;
+}
+
+export const rgbToHex = (rgbString) => {
+    const matches = rgbString.match(/\d+/g);
+    if (!matches || matches.length !== 3) {
+        return null;
+    }
+
+    // Convert the extracted values to integers
+    const r = parseInt(matches[0]);
+    const g = parseInt(matches[1]);
+    const b = parseInt(matches[2]);
+
+    const hexR = r.toString(16).padStart(2, '0');
+    const hexG = g.toString(16).padStart(2, '0');
+    const hexB = b.toString(16).padStart(2, '0');
+
+    // Concatenate the hexadecimal components
+    const hexColor = `#${hexR}${hexG}${hexB}`;
+
+    return hexColor.toUpperCase(); // Convert to uppercase for consistency
 }
