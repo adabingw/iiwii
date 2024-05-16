@@ -28,6 +28,10 @@ body {
   height: 100vh;
 }
 
+* {
+    padding: 0;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
@@ -40,4 +44,20 @@ h1 {
 
 [contenteditable]:focus {
     outline: 0px solid transparent;
+}
+
+li {
+    display: list-item;
+    list-style-position: inside;
+    margin-left: 3px;
+}
+
+ol {
+    list-style-type: decimal;
+    list-style-position: inside;
+    -webkit-margin-before: 1em;
+    -webkit-margin-after: 1em;
+    -webkit-margin-start: 0px;
+    -webkit-margin-end: 0px;
+    -webkit-padding-start: 0px;
 }

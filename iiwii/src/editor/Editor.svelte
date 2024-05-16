@@ -3,6 +3,7 @@ import { setup } from "../utils/constants";
 import {v4 as uuidv4} from 'uuid';
 import Paragraph from "./Paragraph.svelte";
 import { focusEnd, focuspos, getOffset, getOffsetFromIndex, getTotalLines, getWrapped } from "../utils/utils";
+  import List from "./List.svelte";
 
 let blocks = setup;
 
@@ -103,13 +104,36 @@ const leftright = (index, direction) => {
 </script>
 
 <div class="px-72 pt-10" id='breh'>
+    
 {#each blocks as item, index}
     {#if item.type == 'text'}
-        <Paragraph id={item.id} bind:contents={item.content} 
+        <Paragraph id={item.id} bind:contents={item.content} fontsize=16
             on:enter={(e) => enterPresed(e, index)}
             on:delete={(e) => ondelete(e, index)} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
+    {:else if item.type == 'h1'}
+        <Paragraph id={item.id} bind:contents={item.content} fontsize=28
+                on:enter={(e) => enterPresed(e, index)}
+                on:delete={(e) => ondelete(e, index)} 
+                on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
+                on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
+    {:else if item.type == 'h2'}
+        <Paragraph id={item.id} bind:contents={item.content} fontsize=24
+                on:enter={(e) => enterPresed(e, index)}
+                on:delete={(e) => ondelete(e, index)} 
+                on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
+                on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
+    {:else if item.type == 'h3'}
+        <Paragraph id={item.id} bind:contents={item.content} fontsize=20
+                on:enter={(e) => enterPresed(e, index)}
+                on:delete={(e) => ondelete(e, index)} 
+                on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
+                on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
+    {:else if item.type == 'ordered'}
+        <List id={item.id} bind:contents={item.content} type='ordered' />
+    {:else if item.type == 'unordered'}
+        <List id={item.id} bind:contents={item.content} type='unordered' />
     {/if}
 {/each}
 </div>

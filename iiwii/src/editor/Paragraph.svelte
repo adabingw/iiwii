@@ -6,6 +6,8 @@ import {v4 as uuidv4} from 'uuid';
 
 export let contents = [];
 export let id;
+export let fontsize;
+export let type = 'text';
 
 let lengths = [];
 const dispatch = createEventDispatcher();
@@ -126,6 +128,7 @@ $: {
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
+{#if type == 'text'}
 <div on:mousedown={focuslast} class='hover:cursor-text  cursor-text whitespace-pre-wrap text-wrap break-all'>
 <span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:input={(e) => input(e)}
@@ -136,9 +139,27 @@ style={`line-height: 18px;`}>
                 ${content.style.italics ? 'italic' : ''} 
                 ${content.style.underline ? 'underline underline-offset-8' : ''} 
                 whitespace-pre-wrap editableSpan text-wrap break-all`} 
-        style={`color: ${content.style.color}`} 
+        style={`color: ${content.style.color}; font-size: ${fontsize}px; line-height: ${parseInt(fontsize) + 8}px`} 
         title={index.toString()} id={content.id}>{#if content.content.length != 0}{content.content}{/if}</span>
     {/each}
 </span>
 </div>
-
+{:else if type == 'list'}
+<li class='hover:cursor-text  cursor-text'>
+<span on:mousedown={focuslast} class='whitespace-pre-wrap text-wrap break-all'>
+<span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
+on:keydown={keydown} on:input={(e) => input(e)}
+style={`line-height: 18px;`}>
+    {#each contents as content, index}
+    <span 
+        class={`${content.style.bold ? 'font-bold' : ''} 
+                ${content.style.italics ? 'italic' : ''} 
+                ${content.style.underline ? 'underline underline-offset-8' : ''} 
+                whitespace-pre-wrap editableSpan text-wrap break-all`} 
+        style={`color: ${content.style.color}; font-size: ${fontsize}px; line-height: ${parseInt(fontsize) + 8}px`} 
+        title={index.toString()} id={content.id}>{#if content.content.length != 0}{content.content}{/if}</span>
+    {/each}
+</span>
+</span>
+</li>
+{/if}
