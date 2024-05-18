@@ -7,16 +7,15 @@ import { focusEnd, focuspos, getOffset, getOffsetFromIndex, getTotalLines, getWr
 
 let blocks = setup;
 
-const enterPresed = (e, index) => {
+const enterPresed = (e, index, type) => {
     let id = uuidv4();
     let bs = e.detail.blocks;
-    console.log(bs);
     blocks.splice(index + 1, 0, {
-        type: 'text',
+        type: type,
         id: id, 
         content: bs
     })
-    blocks = [...blocks];
+    blocks = [...blocks]
     setTimeout(() => {
         let newline = document.getElementById(id.toString());
         if (newline) {
@@ -82,6 +81,7 @@ const updown = (e, index, direction) => {
 
 // TODO: keep a record of the length 
 const leftright = (index, direction) => {
+    console.log('hi')
     if (direction == 'left') {
         if (index == 0) return;
         let block = document.getElementById(blocks[index - 1].id.toString());
@@ -108,25 +108,25 @@ const leftright = (index, direction) => {
 {#each blocks as item, index}
     {#if item.type == 'text'}
         <Paragraph id={item.id} bind:contents={item.content} fontsize=16
-            on:enter={(e) => enterPresed(e, index)}
+            on:enter={(e) => enterPresed(e, index, 'text')}
             on:delete={(e) => ondelete(e, index)} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
     {:else if item.type == 'h1'}
         <Paragraph id={item.id} bind:contents={item.content} fontsize=28
-                on:enter={(e) => enterPresed(e, index)}
+                on:enter={(e) => enterPresed(e, index, 'h1')}
                 on:delete={(e) => ondelete(e, index)} 
                 on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
                 on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
     {:else if item.type == 'h2'}
         <Paragraph id={item.id} bind:contents={item.content} fontsize=24
-                on:enter={(e) => enterPresed(e, index)}
+                on:enter={(e) => enterPresed(e, index, 'h2')}
                 on:delete={(e) => ondelete(e, index)} 
                 on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
                 on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
     {:else if item.type == 'h3'}
         <Paragraph id={item.id} bind:contents={item.content} fontsize=20
-                on:enter={(e) => enterPresed(e, index)}
+                on:enter={(e) => enterPresed(e, index, 'h3')}
                 on:delete={(e) => ondelete(e, index)} 
                 on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
                 on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>

@@ -82,7 +82,7 @@ export const setup = [
                 id: 'e6282c33-7f49-482a-b13b-8cf00ca0f72b',
                 content: [
                     {
-                        content: 'this is part of an',
+                        content: 'this is part of an ',
                         id: '243467ba-f261-46ab-ae91-17c456cea4d2',
                         style: {
                             'bold': false, 
@@ -97,8 +97,8 @@ export const setup = [
                         style: {
                             'bold': false, 
                             'italics': false,
-                            'underline': false,
-                            'color': '#000000'
+                            'underline': true,
+                            'color': '#8c709c'
                         }
                     }
                 ]

@@ -25,8 +25,7 @@ const keydown = (e) => {
         } else if (e.key == 'ArrowDown') {
             let lines = Math.ceil(getTotalLines(element));
             let currLine = getCurrRow(caret, wrap);
-            let lineIndex = getIndexFromOffset(caret, currLine, element);
-            console.log(lines, currLine, lineIndex)
+            let lineIndex = getIndexFromOffset(caret, currLine);
             if (currLine == lines || (currLine == lines - 1 && lineIndex == 0 && caret != 0)) {
                 dispatch('down', { index: lineIndex })
             }
@@ -49,7 +48,6 @@ const keydown = (e) => {
         } else if (e.key == 'Enter') {
             let element = getActiveDiv();
             if (element) {
-                // element.blur();
                 let caret = getOffset(element);
                 let bs = [];
                 let cutoff = 0;
@@ -63,9 +61,11 @@ const keydown = (e) => {
                         let c = contents[i].content;
                         bs[0].content = c.substring(caret).length > 0 ? c.substring(caret) : ' ';
                         contents[i].content = c.substring(0, caret).length > 0 ? c.substring(0, caret) : ' ';
+                        element.textContent = contents[i].content;
                     }
                     if (i > cutoff) {
-                        bs.push(contents[i]);
+                        const [c] = contents.splice(i, 1);
+                        bs.push(c);
                         bs[bs.length - 1].id = id;
                     }
                 }
@@ -115,9 +115,7 @@ const input = (e) => {
 $: {
     contents;
     lengths = [];
-    console.log(contents)
     for (const content of contents) {
-        console.log(content.content)
         lengths.push(content.content.length);
     }
 }
