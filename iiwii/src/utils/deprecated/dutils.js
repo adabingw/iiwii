@@ -121,3 +121,11 @@ export const getLine = (element) => {
 
     return currentRow;
 }
+
+// gets total line in span
+// can get this from the length of the array returned from getWrap
+export const getTotalLines = (element, lineHeight) => {      
+    let divHeight = element.offsetHeight 
+    let lines = divHeight / lineHeight; 
+    return lines;
+}

@@ -1,7 +1,7 @@
 <script>
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { focuspos, getActiveDiv, getOffset, getTotalLines, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex } from '../utils/utils';
+import { focuspos, getWrapped, focusEnd, getOffsetFromIndex } from '../utils/utils';
 import {v4 as uuidv4} from 'uuid';
 import Paragraph from './Paragraph.svelte';
 
@@ -29,15 +29,81 @@ const enterPresed = (e, index) => {
     // dispatch('enter', e.detail.blocks)
 }
 
-const ondelete = (e) => {
+const ondelete = (e, index) => {
+    let i = parseInt(e.detail.index);
+    if (contents[index].content.length != 1) {
+        contents[index].content.splice(i, 1);
+    } else if (contents[index].content.length == 1 && contents.length == 1) {
+        contents[index]['content'][0]['content'] = '';
+    } else if (contents[index].content.length == 1 && contents.length > 1) {
+        contents.splice(index, 1)
+        if (index > 0) {
+            setTimeout(() => {
+                let block = contents[index - 1]
+                let element = document.getElementById(block.id.toString());
+                if (element) {
+                    focusEnd(element);
+                }
+            }, 100);
+        }
+    }
+    contents = [...contents]
     dispatch('delete', { index: e.detail.title })
 }
 
-const updown = (e, direction) => {
+const updown = (e, index, direction) => {
+    if (direction == 'up') {
+        if (index == 0) return;
+        let pos = e.detail.index;
+        let block = document.getElementById(contents[index - 1].id.toString());
+        let wrap = getWrapped(block, 16)
+    
+        if (block) {
+            let len = block.textContent.length;
+            let lines = wrap.length;
+            if (lines > 1) {
+                pos = getOffsetFromIndex(pos, wrap);
+            }
+            if (pos >= len) {
+                focusEnd(block);
+            } else {
+                focusEnd(block);
+            }
+        }
+    } else if (direction == 'down') {
+        if (index == contents.length - 1) return;
+        let pos = e.detail.index;
+        let block = document.getElementById(contents[index + 1].id.toString());
+        if (block) {
+            let len = block.textContent.length;
+            if (pos > len) {
+                focusEnd(block);
+            } else {
+                focuspos(block, pos);
+            }
+        }
+    }
     dispatch(direction, { index: e.detail.index })
 }
 
-const leftright = (direction) => {
+const leftright = (index, direction) => {
+    if (direction == 'left') {
+        if (index == 0) return;
+        let block = document.getElementById(contents[index - 1].id.toString());
+        if (block) {
+            let len = 0
+            contents[index - 1].content.forEach((val) => {
+                len += val.content.length;
+            })
+            focusEnd(block);
+        }
+    } else {
+        if (index == contents.length - 1) return;
+        let block = document.getElementById(contents[index + 1].id.toString());
+        if (block) {
+            block.focus();
+        }
+    }
     dispatch(direction);
 }
 
@@ -51,9 +117,9 @@ const leftright = (direction) => {
     {#each contents as line, index}
         <Paragraph id={line.id} bind:contents={line.content} fontsize=16 type='list'
                 on:enter={(e) => enterPresed(e, index)}
-                on:delete={(e) => ondelete(e)} 
-                on:up={(e) => updown(e)} on:down={(e) => updown(e)}
-                on:right={(e) => leftright(e)} on:left={(e) => leftright(e)}/>
+                on:delete={(e) => ondelete(e, index)} 
+                on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
+                on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
     {/each}
 </ol>
 {:else}
@@ -61,9 +127,9 @@ const leftright = (direction) => {
     {#each contents as line, index}
         <Paragraph id={line.id} bind:contents={line.content} fontsize=16 type='list'
                     on:enter={(e) => enterPresed(e, index)}
-                    on:delete={(e) => ondelete(e)} 
-                    on:up={(e) => updown(e, 'up')} on:down={(e) => updown(e, 'down')}
-                    on:right={(e) => leftright('right')} on:left={(e) => leftright('left')}/>
+                    on:delete={(e) => ondelete(e, index)} 
+                    on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
+                    on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
     {/each}
 </ul>
 {/if}

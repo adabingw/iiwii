@@ -34,8 +34,8 @@ export const focuspos = (element, pos) => {
                 pos -= node.length;
             }
         } else{
-            pos = focuspos(node,pos + 1);
-            if(pos == -1){
+            pos = focuspos(node, pos + 1);
+            if (pos == -1){
                 return -1; // no need to finish the for loop
             }
         }
@@ -74,13 +74,6 @@ export const getCurrRow = (cursorIndex, wrapped) => {
     return 1;
 }
 
-// gets total line in span
-export const getTotalLines = (element) => {      
-    let divHeight = element.offsetHeight 
-    let lines = divHeight / 24; 
-    return lines;
-}
-
 // get cursorIndex from position in (last) line
 export const getOffsetFromIndex = (index, wrapped) => {
     let cum = 0;
@@ -101,7 +94,7 @@ export const getIndexFromOffset = (offset, wrapped) => {
 }
 
 // returns array of text at places of textwrap
-export const getWrapped = (element) => {
+export const getWrapped = (element, fontSize) => {
     if (!element) return [];
     let elWidth = window.innerWidth - 288 * 2;
     let spanrow = document.createElement('span');
@@ -120,7 +113,7 @@ export const getWrapped = (element) => {
 
             let nodespan = document.createElement('span');
             spanrow.appendChild(nodespan);
-            nodespan.style.fontSize = 16 + 'px';
+            nodespan.style.fontSize = fontSize + 'px';
             nodespan.style.letterSpacing = 0 + 'px';
             nodespan.style.fontWeight = fontWeight;
             nodespan.style.fontStyle = fontStyle;
@@ -155,6 +148,7 @@ export const getActiveDiv = () => {
     sel.removeAllRanges();
     sel.addRange(range);
     let activeDiv = node.parentNode;
+    console.log(activeDiv)
     node.parentNode.removeChild(node);
     return activeDiv;
 }

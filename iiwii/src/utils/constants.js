@@ -108,7 +108,7 @@ export const setup = [
                 id: 'e33be222-ef93-4b4f-a9b8-42935a497e5f',
                 content: [
                     {
-                        content: 'second entry in the list',
+                        content: 'a',
                         id: 'f564af9e-8c8a-4f24-a615-cc552991562f',
                         style: {
                             'bold': false, 

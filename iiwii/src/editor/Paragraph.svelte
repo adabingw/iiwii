@@ -1,7 +1,7 @@
 <script>
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { focusEnd, focuspos, getActiveDiv, getOffset, getTotalLines, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex } from '../utils/utils';
+import { focuspos, getActiveDiv, getOffset, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex } from '../utils/utils';
 import {v4 as uuidv4} from 'uuid';
 
 export let contents = [];
@@ -14,7 +14,7 @@ const dispatch = createEventDispatcher();
 
 const keydown = (e) => {
     let element = document.getElementById(id);
-    let wrap = getWrapped(element)
+    let wrap = getWrapped(element, fontsize)
     if (element) {
         let caret = getOffset(element);
         if (e.key == 'ArrowUp') {
@@ -23,7 +23,7 @@ const keydown = (e) => {
                 dispatch('up', { index: caret })
             }
         } else if (e.key == 'ArrowDown') {
-            let lines = Math.ceil(getTotalLines(element));
+            let lines = wrap.length;
             let currLine = getCurrRow(caret, wrap);
             let lineIndex = getIndexFromOffset(caret, currLine);
             if (currLine == lines || (currLine == lines - 1 && lineIndex == 0 && caret != 0)) {
@@ -41,39 +41,45 @@ const keydown = (e) => {
         } else if (e.key == 'Backspace') {
             let element = getActiveDiv();
             // @ts-ignore
+            // TODO: when backspace on first position should append element into back of previous
             if (element && (element.innerText.length == 1 || element.innerText.trimEnd().length == 0)) {
                 // @ts-ignore
                 dispatch('delete', { index: element.title })
             }
         } else if (e.key == 'Enter') {
-            let element = getActiveDiv();
+            let element = getActiveDiv();       
+            e.preventDefault();
+            e.stopPropagation();             
             if (element) {
                 let caret = getOffset(element);
                 let bs = [];
                 let cutoff = 0;
-                for (let i = 0; i < contents.length; i++) {
-                    let id = uuidv4();
-                    // @ts-ignore
-                    if (contents[i].id == element.id) {
-                        cutoff = i;
-                        bs.push({...contents[i]});
-                        bs[0].id = id;
-                        let c = contents[i].content;
-                        bs[0].content = c.substring(caret).length > 0 ? c.substring(caret) : ' ';
-                        contents[i].content = c.substring(0, caret).length > 0 ? c.substring(0, caret) : ' ';
-                        element.textContent = contents[i].content;
+                let id = uuidv4();
+                if (caret == element.textContent.length) {
+                    bs.push({...contents[contents.length - 1]});
+                    bs[0].id = id;
+                    bs[0].content = ' ';
+                } else {
+                    for (let i = 0; i < contents.length; i++) {
+                        // @ts-ignore
+                        if (contents[i].id == element.id) {
+                            cutoff = i;
+                            bs.push({...contents[i]});
+                            bs[0].id = id;
+                            let c = contents[i].content;
+                            bs[0].content = c.substring(caret).length > 0 ? c.substring(caret) : ' ';
+                            contents[i].content = c.substring(0, caret).length > 0 ? c.substring(0, caret) : ' ';
+                            element.textContent = contents[i].content;
+                        }
+                        if (i > cutoff) {
+                            const [c] = contents.splice(i, 1);
+                            bs.push(c);
+                            bs[bs.length - 1].id = id;
+                        }
                     }
-                    if (i > cutoff) {
-                        const [c] = contents.splice(i, 1);
-                        bs.push(c);
-                        bs[bs.length - 1].id = id;
-                    }
+                    if (cutoff < contents.length - 2) contents.splice(cutoff + 1);
                 }
-                if (cutoff < contents.length - 2) contents.splice(cutoff + 1);
                 contents = [...contents];
-
-                e.preventDefault();
-                e.stopPropagation();
                 dispatch('enter', { 
                     blocks: [...bs]
                 });

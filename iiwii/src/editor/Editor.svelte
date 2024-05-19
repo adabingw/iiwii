@@ -2,7 +2,7 @@
 import { setup } from "../utils/constants";
 import {v4 as uuidv4} from 'uuid';
 import Paragraph from "./Paragraph.svelte";
-import { focusEnd, focuspos, getOffset, getOffsetFromIndex, getTotalLines, getWrapped } from "../utils/utils";
+import { focusEnd, focuspos, getOffset, getOffsetFromIndex, getWrapped } from "../utils/utils";
   import List from "./List.svelte";
 
 let blocks = setup;
@@ -50,11 +50,15 @@ const updown = (e, index, direction) => {
         if (index == 0) return;
         let pos = e.detail.index;
         let block = document.getElementById(blocks[index - 1].id.toString());
-        let wrap = getWrapped(block)
+        let f = 16;
+        if (blocks[index - 1].type == 'h3') f = 20;
+        else if (blocks[index - 1].type == 'h2') f = 24;
+        else if (blocks[index - 1].type == 'h3') f = 28;
+        let wrap = getWrapped(block, f);
     
         if (block) {
             let len = block.textContent.length;
-            let lines = Math.ceil(getTotalLines(block));
+            let lines = wrap.length;
             if (lines > 1) {
                 pos = getOffsetFromIndex(pos, wrap);
             }
@@ -69,7 +73,10 @@ const updown = (e, index, direction) => {
         let pos = e.detail.index;
         let block = document.getElementById(blocks[index + 1].id.toString());
         if (block) {
-            let len = block.textContent;
+            let len = block.textContent.length;
+            focusEnd(block)
+            // TODO: fix positioning issue
+            return;
             if (pos > len) {
                 focusEnd(block);
             } else {
@@ -81,7 +88,6 @@ const updown = (e, index, direction) => {
 
 // TODO: keep a record of the length 
 const leftright = (index, direction) => {
-    console.log('hi')
     if (direction == 'left') {
         if (index == 0) return;
         let block = document.getElementById(blocks[index - 1].id.toString());
