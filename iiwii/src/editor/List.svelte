@@ -12,6 +12,16 @@ export let type;
 const dispatch = createEventDispatcher();
 
 const enterPresed = (e, index) => {
+    let element = document.getElementById(contents[index].id);
+    if (element) {
+        let text = element.textContent;
+        if (text.trimEnd().length == 0) {
+            dispatch('text', {
+                index: index
+            });
+            return;
+        }
+    }
     let id = uuidv4();
     let bs = e.detail.blocks;
     contents.splice(index + 1, 0, {
@@ -30,6 +40,16 @@ const enterPresed = (e, index) => {
 }
 
 const ondelete = (e, index) => {
+    let element = document.getElementById(contents[index].id);
+    if (element) {
+        let text = element.textContent;
+        if (text.trimEnd().length == 0) {
+            dispatch('text', {
+                index: index
+            });
+            return;
+        }
+    }
     let i = parseInt(e.detail.index);
     if (contents[index].content.length != 1) {
         contents[index].content.splice(i, 1);
@@ -53,7 +73,12 @@ const ondelete = (e, index) => {
 
 const updown = (e, index, direction) => {
     if (direction == 'up') {
-        if (index == 0) return;
+        if (index == 0) {
+            dispatch('up', {
+                index: e.detail.index
+            });
+            return;
+        }
         let pos = e.detail.index;
         let block = document.getElementById(contents[index - 1].id.toString());
         let wrap = getWrapped(block, 16)
@@ -71,7 +96,12 @@ const updown = (e, index, direction) => {
             }
         }
     } else if (direction == 'down') {
-        if (index == contents.length - 1) return;
+        if (index == contents.length - 1) {
+            dispatch('down', {
+                index: e.detail.index
+            });
+            return;
+        }
         let pos = e.detail.index;
         let block = document.getElementById(contents[index + 1].id.toString());
         if (block) {
@@ -83,12 +113,15 @@ const updown = (e, index, direction) => {
             }
         }
     }
-    dispatch(direction, { index: e.detail.index })
+    // dispatch(direction, { index: e.detail.index })
 }
 
 const leftright = (index, direction) => {
     if (direction == 'left') {
-        if (index == 0) return;
+        if (index == 0) {
+            dispatch('left');
+            return;
+        }
         let block = document.getElementById(contents[index - 1].id.toString());
         if (block) {
             let len = 0
@@ -98,13 +131,16 @@ const leftright = (index, direction) => {
             focusEnd(block);
         }
     } else {
-        if (index == contents.length - 1) return;
+        if (index == contents.length - 1) {
+            dispatch('right');
+            return;
+        }
         let block = document.getElementById(contents[index + 1].id.toString());
         if (block) {
             block.focus();
         }
     }
-    dispatch(direction);
+    // dispatch(direction);
 }
 
 </script>

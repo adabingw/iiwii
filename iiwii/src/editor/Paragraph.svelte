@@ -3,12 +3,15 @@
 import { createEventDispatcher, onMount } from 'svelte';
 import { focuspos, getActiveDiv, getOffset, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex } from '../utils/utils';
 import {v4 as uuidv4} from 'uuid';
+  import ContextMenu from '../utils/ContextMenu.svelte';
 
 export let contents = [];
 export let id;
 export let fontsize;
 export let type = 'text';
 
+let selected = false;
+let menu;
 let lengths = [];
 const dispatch = createEventDispatcher();
 
@@ -39,18 +42,25 @@ const keydown = (e) => {
                 dispatch('left')
             }
         } else if (e.key == 'Backspace') {
-            let element = getActiveDiv();
-            // @ts-ignore
-            // TODO: when backspace on first position should append element into back of previous
-            if (element && (element.innerText.length == 1 || element.innerText.trimEnd().length == 0)) {
-                // @ts-ignore
-                dispatch('delete', { index: element.title })
+            let el2 = getActiveDiv();
+            let el2caret = getOffset(el2);
+            if (caret == 0) {
+                dispatch('delete', {
+                    index: element.title, 
+                    text: element.textContent.length > 0 ? contents : undefined
+                });
+                element.textContent = '';
+                return;
+            }
+            if (el2caret == 0) {
+                dispatch('delete', { index: el2.title });
+                return;
             }
         } else if (e.key == 'Enter') {
-            let element = getActiveDiv();       
+            let el2 = getActiveDiv();       
             e.preventDefault();
             e.stopPropagation();             
-            if (element) {
+            if (el2) {
                 let caret = getOffset(element);
                 let bs = [];
                 let cutoff = 0;
@@ -62,14 +72,14 @@ const keydown = (e) => {
                 } else {
                     for (let i = 0; i < contents.length; i++) {
                         // @ts-ignore
-                        if (contents[i].id == element.id) {
+                        if (contents[i].id == el2.id) {
                             cutoff = i;
                             bs.push({...contents[i]});
                             bs[0].id = id;
                             let c = contents[i].content;
                             bs[0].content = c.substring(caret).length > 0 ? c.substring(caret) : ' ';
                             contents[i].content = c.substring(0, caret).length > 0 ? c.substring(0, caret) : ' ';
-                            element.textContent = contents[i].content;
+                            el2.textContent = contents[i].content;
                         }
                         if (i > cutoff) {
                             const [c] = contents.splice(i, 1);
@@ -84,6 +94,36 @@ const keydown = (e) => {
                     blocks: [...bs]
                 });
             }
+        }
+    }
+}
+
+const keyup = (e) => {
+    // TODO: * -> unordered list
+    // TODO: 1. -> ordered list
+    // TODO: #. -> ordered list with different start value
+    // TODO: tab -> how to maintain?
+    if (e.key == '/') {
+        let element = document.getElementById(id);
+        if (element && element.textContent.trimEnd().length == 1) {
+            e.preventDefault();
+            e.stopPropagation(); 
+            const rect = element.getBoundingClientRect();
+            let top = rect.top;
+            let bottom = rect.bottom;
+            let left = rect.left;
+            let icons = document.getElementsByClassName('fa-plus');
+            for (const icon of icons) {
+                icon.style.visibility = 'hidden';
+            }
+            menu.openMenu(top, left, bottom);
+        }
+    } else {
+        let element = document.getElementById(id);
+        if (element && element.textContent.trimEnd().length != 1 && element.textContent.trimEnd() != '/') {
+            e.preventDefault();
+            e.stopPropagation();
+            menu.onPageClick(e);
         }
     }
 }
@@ -118,6 +158,23 @@ const input = (e) => {
     }
 }
 
+const addclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selected) {
+        let element = document.getElementById(`icon-${id}`);
+        if (element) {
+            const rect = element.getBoundingClientRect();
+            let top = rect.top;
+            let bottom = rect.bottom;
+            let left = rect.left;
+            menu.openMenu(top, left, bottom);
+            selected = true;
+            // menu.openMenu(e.clientY, e.clientX, e.clientY);
+        }
+    }
+}
+
 $: {
     contents;
     lengths = [];
@@ -126,16 +183,22 @@ $: {
     }
 }
 
-// {#if contents.length == 1 && contents[0]['content'] == ''}<span class='text-gray-500 whitespace-pre-wrap' id="empty">   Empty</span>{/if}
-
 </script>
+
+<ContextMenu bind:this={menu} id={id} bind:selected={selected} />
+<div class='flex flex-row flex-start'>
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+
+<i class={`fa-solid fa-plus fa-ms ${selected ? 'selected' : ''}`} style={`line-height: ${parseInt(fontsize) + 8}px;`} 
+    on:click={addclick} id={`icon-${id}`}></i>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 {#if type == 'text'}
 <div on:mousedown={focuslast} class='hover:cursor-text  cursor-text whitespace-pre-wrap text-wrap break-all'>
 <span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
-on:keydown={keydown} on:input={(e) => input(e)}
+on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)}
 style={`line-height: 18px;`}>
     {#each contents as content, index}
     <span 
@@ -152,7 +215,7 @@ style={`line-height: 18px;`}>
 <li class='hover:cursor-text  cursor-text'>
 <span on:mousedown={focuslast} class='whitespace-pre-wrap text-wrap break-all'>
 <span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
-on:keydown={keydown} on:input={(e) => input(e)}
+on:keydown={keydown} on:input={(e) => input(e)} on:keyup={keyup}
 style={`line-height: 18px;`}>
     {#each contents as content, index}
     <span 
@@ -167,3 +230,22 @@ style={`line-height: 18px;`}>
 </span>
 </li>
 {/if}
+</div>
+
+<style>
+i {
+    margin-left: -15px;
+    margin-right: 10px;
+    color: #b1b1b1 !important;
+    opacity: 0;
+}
+
+.selected {
+    opacity: 1;
+}
+
+i:hover {
+    cursor: pointer;
+    opacity: 1;
+}
+</style>

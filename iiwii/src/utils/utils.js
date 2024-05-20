@@ -148,7 +148,6 @@ export const getActiveDiv = () => {
     sel.removeAllRanges();
     sel.addRange(range);
     let activeDiv = node.parentNode;
-    console.log(activeDiv)
     node.parentNode.removeChild(node);
     return activeDiv;
 }
@@ -172,4 +171,41 @@ export const rgbToHex = (rgbString) => {
     const hexColor = `#${hexR}${hexG}${hexB}`;
 
     return hexColor.toUpperCase(); // Convert to uppercase for consistency
+}
+
+export const invertColor = (hexString) => {
+
+    hexString = hexString.replace(/^#/, '');
+
+    // Parse the r, g, b values
+    let r = parseInt(hexString.slice(0, 2), 16);
+    let g = parseInt(hexString.slice(2, 4), 16);
+    let b = parseInt(hexString.slice(4, 6), 16);
+
+    // Invert each color component
+    r = (255 - r).toString(16).padStart(2, '0');
+    g = (255 - g).toString(16).padStart(2, '0');
+    b = (255 - b).toString(16).padStart(2, '0');
+
+    // Return the inverted color
+    return `#${r}${g}${b}`;
+}
+
+/** Dispatch event on click outside of node */
+export function clickOutside(node) {
+    const handleClick = event => {
+        if (node && !node.contains(event.target) && !event.defaultPrevented) {
+            node.dispatchEvent(
+                new CustomEvent('click_outside', node)
+            )
+        }
+    }
+
+    document.addEventListener('click', handleClick, true);
+  
+    return {
+        destroy() {
+            document.removeEventListener('click', handleClick, true);
+        }
+    }
 }

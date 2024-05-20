@@ -119,7 +119,56 @@ export const setup = [
                     }
                 ]
             },
+            {
+                type: 'text',
+                id: 'a121db05-dcaa-4955-a690-3b75afbb753f',
+                content: [
+                    {
+                        content: 'a',
+                        id: '5ed0ac2c-7fe2-4c2e-a3d4-e6d9034d3069',
+                        style: {
+                            'bold': false, 
+                            'italics': false,
+                            'underline': false,
+                            'color': '#000000'
+                        }
+                    }
+                ]
+            },
         ]
     } 
+]
 
+export const MENU = [
+    {
+        'name': 'elements',
+        'displayText': "Elements",
+        'class': 'fa-solid fa-trash-can fa-ms fa-fw',
+        'items': [{
+            'name': 'h1', 
+            'displayText': 'Heading 1', 
+            'class': 'fa-solid fa-1 fa-xs fa-fw', 
+        }, {
+            'name': 'h2', 
+            'displayText': 'Heading 2', 
+            'class': 'fa-solid fa-2 fa-xs fa-fw'
+        }, {
+            'name': 'h3', 
+            'displayText': 'Heading 3', 
+            'class': 'fa-solid fa-3 fa-xs fa-fw'
+        }, {
+            'name': 'text', 
+            'displayText': 'Heading 3', 
+            'class': 'fa-solid fa-font fa-xs fa-fw'
+        }, {
+            'name': 'ul', 
+            'displayText': 'Bullet list', 
+            'class': 'fa-solid fa-list-ul fa-xs fa-fw'
+        }, {
+            'name': 'ol', 
+            'displayText': 'Number list', 
+            'class': 'fa-solid fa-list-ol fa-xs fa-fw'
+        }
+        ]
+    }, 
 ]
