@@ -172,3 +172,38 @@ export const MENU = [
         ]
     }, 
 ]
+
+export const TOOL = [
+    {
+        'name': 'transform',
+        'displayText': "Turn into",
+        'class': 'fa-solid fa-arrow-right-arrow-left fa-xs fa-fw'
+    },
+    {
+        'name': 'elements',
+        'displayText': "Elements",
+        'class': 'fa-solid fa-trash-can fa-xs fa-fw',
+        'items': [{
+            'name': 'bold', 
+            'displayText': 'Bold', 
+            'class': 'fa-solid fa-bold fa-xs fa-fw', 
+        }, {
+            'name': 'italics', 
+            'displayText': 'Italics', 
+            'class': 'fa-solid fa-italic fa-xs fa-fw'
+        }, {
+            'name': 'underline', 
+            'displayText': 'Underline', 
+            'class': 'fa-solid fa-underline fa-xs fa-fw'
+        }, {
+            'name': 'strikethrough', 
+            'displayText': 'Strikethrough', 
+            'class': 'fa-solid fa-strikethrough fa-xs fa-fw'
+        }, {
+            'name': 'code', 
+            'displayText': 'Code', 
+            'class': 'fa-solid fa-code fa-xs fa-fw'
+        }
+        ]
+    }, 
+]

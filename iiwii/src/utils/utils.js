@@ -93,6 +93,19 @@ export const getIndexFromOffset = (offset, wrapped) => {
     return offset;
 }
 
+export const getCoverage = (start, end, content) => {
+    let cum = 0;
+    let ids = [];
+    for (let i = 0; i < content.length; i++) {
+        // TODO: fix this
+        if (cum > start && cum < end) {
+            ids.push(i);
+        }
+        cum += content[i].content.length;
+    }
+    return ids;
+}
+
 // returns array of text at places of textwrap
 export const getWrapped = (element, fontSize) => {
     if (!element) return [];

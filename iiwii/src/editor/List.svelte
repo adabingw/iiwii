@@ -24,8 +24,9 @@ const enterPresed = (e, index) => {
     }
     let id = uuidv4();
     let bs = e.detail.blocks;
+    console.log(bs)
     contents.splice(index + 1, 0, {
-        type: type,
+        type: 'text',
         id: id, 
         content: bs
     })
@@ -36,16 +37,19 @@ const enterPresed = (e, index) => {
             newline.focus();
         }
     }, 100);
+    console.log(contents)
     // dispatch('enter', e.detail.blocks)
 }
 
 const ondelete = (e, index) => {
     let element = document.getElementById(contents[index].id);
+    let context = e.detail.text;
     if (element) {
         let text = element.textContent;
-        if (text.trimEnd().length == 0) {
+        if (text.trimEnd().length == 0 || context) {
             dispatch('text', {
-                index: index
+                index: index,
+                text: text.trimEnd().length == 0 ? '' : context
             });
             return;
         }

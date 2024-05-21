@@ -1,17 +1,19 @@
 <script>
 import { createEventDispatcher } from 'svelte';
 import { clickOutside } from './utils.js';
-import { MENU } from './constants';
+import { TOOL } from './constants';
+import ContextMenu from './ContextMenu.svelte';
 
 export let id;
-export let selected = false;
+export let selected;
 let top;
 let left;
 let bottom;
 let showMenu = false;
 let index;
+let menu;
 let item = [];
-
+let turninto = false;
 let style = "";
 
 const dispatch = createEventDispatcher();
@@ -33,6 +35,28 @@ const menuClick = (context, subcontext) => {
     })
 }
 
+const dropdown = (e) => {
+    if (turninto) {
+        menu.onPageClick(e);
+        turninto = false;
+    } else {
+        let element = document.getElementById('navbar');
+        if (element) {
+            const rect = element.getBoundingClientRect();
+            let top = rect.top;
+            let bottom = rect.bottom;
+            let left = rect.left;
+            console.log(top, left, bottom)
+            let icons = document.getElementsByClassName('fa-plus');
+            for (const icon of icons) {
+                icon.style.visibility = 'hidden';
+            }
+            menu.openMenu(bottom - top - 10, 0, bottom);
+        }
+        turninto = true;
+    }
+}
+
 export const onPageClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -52,8 +76,8 @@ export const openMenu = (top_, left_, bottom_) => {
     top = top_;
     left = left_;
     bottom = bottom_;
-    if (bottom > 250) {
-        style = `position: absolute; top:${top + 15}px; left:${left}px; z-index: 1;`
+    if (bottom > 200) {
+        style = `position: absolute; top:${bottom + 5}px; left:${left}px; z-index: 1;`
     } else {
         style = `position: absolute; bottom:${window.innerHeight - top + 5}px; left:${left}px; z-index: 1;`
     }
@@ -69,19 +93,22 @@ export const openMenu = (top_, left_, bottom_) => {
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->  
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div style={style} class:show={showMenu} use:clickOutside on:click_outside={onPageClick}>
+    <ContextMenu bind:this={menu} id={id} />
     <div class={`navbar`} id="navbar">
-        <ul>
-            {#each MENU as item, index}
+            {#each TOOL as item, index}
                 {#if item.items}
-                {#each item.items as i}
-                    <li on:click={() => menuClick(item.name, i.name)}>
-                        <i class={`${i.class}`}></i>
-                        {i.displayText}
-                    </li>
-                {/each}
+                    {#each item.items as i}
+                        <span on:click={() => menuClick(item.name, i.name)}>
+                            <i class={`${i.class}`}></i>
+                        </span>
+                    {/each}
+                {:else}
+                    <span on:click={(e) => dropdown(e)}>
+                        <i class={`${item.class}`}></i>
+                        {item.displayText}
+                    </span>
                 {/if}
             {/each}
-        </ul>
     </div>
 </div>
 {/if}
@@ -99,44 +126,24 @@ export const openMenu = (top_, left_, bottom_) => {
     background-color: #fff;
     border-radius: 5px;
     overflow: hidden;
-    flex-direction: column;
-}
-
-.navbar ul{
-    margin: 6px;
-}
-
-ul li {
-    display: block;
-    list-style-type: none;
-    width: 1fr;
-}
-
-ul li {
-    color: #222;
-    width: 100%;
-    height: 30px;
-    text-align: left;
-    border: 0px;
-    background-color: #fff;
-    padding-top: 3px;
+    flex-direction: row;
+    padding-left: 8px;
     padding-right: 8px;
 }
 
-ul li:hover{
-    color: #000;
-    cursor: pointer;
-    text-align: left;
-    border-radius: 5px;
-    background-color: #eee;
+.navbar span {
+    margin: 6px;
+    padding: 5px;
 }
 
-ul li i{
-    padding: 0px 15px 0px 10px;
-    margin-right: 8px;
+.navbar span:hover {
+    cursor: pointer;
+    background-color: #e9e9e9;
+    border-radius: 3px;
 }
 
 i {
     width: 15px;
 }
 </style>
+    

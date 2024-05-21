@@ -1,9 +1,10 @@
 <script>
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { focuspos, getActiveDiv, getOffset, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex } from '../utils/utils';
+import { focuspos, getActiveDiv, getOffset, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex, getCoverage } from '../utils/utils';
 import {v4 as uuidv4} from 'uuid';
   import ContextMenu from '../utils/ContextMenu.svelte';
+  import TextTool from '../utils/TextTool.svelte';
 
 export let contents = [];
 export let id;
@@ -12,6 +13,7 @@ export let type = 'text';
 
 let selected = false;
 let menu;
+let tool;
 let lengths = [];
 const dispatch = createEventDispatcher();
 
@@ -44,12 +46,13 @@ const keydown = (e) => {
         } else if (e.key == 'Backspace') {
             let el2 = getActiveDiv();
             let el2caret = getOffset(el2);
+            console.log(el2)
             if (caret == 0) {
                 dispatch('delete', {
                     index: element.title, 
-                    text: element.textContent.length > 0 ? contents : undefined
+                    text: element.textContent.trimEnd().length > 0 ? contents : undefined
                 });
-                element.textContent = '';
+                element.textContent = ' ';
                 return;
             }
             if (el2caret == 0) {
@@ -99,10 +102,20 @@ const keydown = (e) => {
 }
 
 const keyup = (e) => {
-    // TODO: * -> unordered list
-    // TODO: 1. -> ordered list
-    // TODO: #. -> ordered list with different start value
-    // TODO: tab -> how to maintain?
+
+    let start = window.getSelection().extentOffset;
+    let end = window.getSelection().anchorOffset
+    let selection = window.getSelection().anchorNode.textContent.substring(
+      start, 
+      end
+    );
+    let ids = getCoverage(start, end, contents);
+    if (ids.length > 1) {
+        // don't highlight style in toolbox
+    } else if (ids.length == 1) {
+        // highlight style in toolbox
+    }
+    console.log('selection: ', selection)
     if (e.key == '/') {
         let element = document.getElementById(id);
         if (element && element.textContent.trimEnd().length == 1) {
@@ -150,6 +163,14 @@ const focuslast = (e) => {
     } 
 }
 
+const mouseup = (e) => {
+    let selection = window.getSelection().anchorNode.textContent.substring(
+      window.getSelection().extentOffset, 
+      window.getSelection().anchorOffset
+    );
+    console.log('selection: ', selection)
+}
+
 const input = (e) => {
     let element = getActiveDiv();
     if (element && contents[element.title]) {
@@ -178,14 +199,19 @@ const addclick = (e) => {
 $: {
     contents;
     lengths = [];
+    console.log(contents)
     for (const content of contents) {
-        lengths.push(content.content.length);
+        if (content && content.content && content.length)
+            lengths.push(content.content.length);
     }
 }
 
+// <ContextMenu bind:this={menu} id={id} bind:selected={selected} />
+
 </script>
 
-<ContextMenu bind:this={menu} id={id} bind:selected={selected} />
+
+<TextTool bind:this={menu} id={id} bind:selected={selected} />
 <div class='flex flex-row flex-start'>
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -200,6 +226,7 @@ $: {
 <span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)}
 style={`line-height: 18px;`}>
+
     {#each contents as content, index}
     <span 
         class={`${content.style.bold ? 'font-bold' : ''} 

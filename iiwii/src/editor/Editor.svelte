@@ -29,12 +29,30 @@ const textEnter = (e, index, type) => {
     let i = e.detail.index;
     let c = blocks[index].content;
     let id = uuidv4();
+
+    console.log(JSON.stringify(c))
+    console.log(i, c.length)
     
     if (i == c.length - 1) {
-        blocks[index]['content'].splice(i, 1);
+        let [new_content] = blocks[index]['content'].splice(i, 1);
+        blocks.splice(index + 1, 0, new_content);
+        setTimeout(() => {
+            let element = document.getElementById(new_content.id);
+            if (element) {
+                element.focus();
+            }
+        }, 100);
     } else if (i == 0) {
-        blocks[index]['content'].splice(0, 1);
+        let [new_content] = blocks[index]['content'].splice(0, 1);
+        blocks.splice(index + 1, 0, new_content);
+        setTimeout(() => {
+            let element = document.getElementById(new_content.id);
+            if (element) {
+                element.focus();
+            }
+        }, 100);
     } else {
+        console.log('ai')
         let new_b = blocks[index]['content'].splice(i);
         let [new_content] = new_b.splice(0, 1);
         blocks.splice(index + 1, 0, new_content);
@@ -49,9 +67,8 @@ const textEnter = (e, index, type) => {
             id: id, 
             content: new_b
         });
-        blocks = [...blocks]
-        console.log(blocks)
     }
+    blocks = [...blocks]
 }
 
 const ondelete = (e, index) => {
@@ -60,11 +77,18 @@ const ondelete = (e, index) => {
     // backspace on an element that isn't empty should append that element to the previous element
     if (content) {
         if (index < 1) return;
-        blocks[index - 1].content.push(...content)
+        let id;
+        if (blocks[index - 1].type == 'unordered' || blocks[index - 1].type == 'ordered') {
+            let c = blocks[index - 1].content;
+            c[c.length - 1].content.push(...c);
+            id = c[c.length - 1].id;
+        } else {
+            blocks[index - 1].content.push(...content)
+            id = blocks[index - 1].id;
+        }
         setTimeout(() => {
             blocks.splice(index, 1);
-            let block = blocks[index - 1]
-            let element = document.getElementById(block.id.toString());
+            let element = document.getElementById(id.toString());
             if (element) {
                 focusEnd(element);
             }
@@ -78,11 +102,18 @@ const ondelete = (e, index) => {
             blocks[index]['content'][0]['content'] = ' ';
         // delete entire element 
         } else if (blocks[index].content.length == 1 && blocks.length > 1) {
-            blocks.splice(index, 1)
+            blocks.splice(index, 1);
+            let id;
+            if (blocks[index - 1].type == 'unordered' || blocks[index - 1].type == 'ordered') {
+                let c = blocks[index - 1].content;
+                id = c[c.length - 1].id;
+            } else {
+                id = blocks[index - 1].id;
+            }
+            console.log(blocks[index - 1].content)
             if (index > 0) {
                 setTimeout(() => {
-                    let block = blocks[index - 1]
-                    let element = document.getElementById(block.id.toString());
+                    let element = document.getElementById(id.toString());
                     if (element) {
                         focusEnd(element);
                     }
