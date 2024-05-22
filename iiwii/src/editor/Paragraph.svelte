@@ -11,6 +11,7 @@ export let id;
 export let fontsize;
 export let type = 'text';
 
+let selText = '';
 let selected = false;
 let menu;
 let tool;
@@ -102,9 +103,9 @@ const keydown = (e) => {
 }
 
 const keyup = (e) => {
-
     let start = window.getSelection().extentOffset;
-    let end = window.getSelection().anchorOffset
+    let end = window.getSelection().anchorOffset;
+    let element = document.getElementById(id);
     let selection = window.getSelection().anchorNode.textContent.substring(
       start, 
       end
@@ -115,9 +116,7 @@ const keyup = (e) => {
     } else if (ids.length == 1) {
         // highlight style in toolbox
     }
-    console.log('selection: ', selection)
     if (e.key == '/') {
-        let element = document.getElementById(id);
         if (element && element.textContent.trimEnd().length == 1) {
             e.preventDefault();
             e.stopPropagation(); 
@@ -131,14 +130,17 @@ const keyup = (e) => {
             }
             menu.openMenu(top, left, bottom);
         }
-    } else {
-        let element = document.getElementById(id);
-        if (element && element.textContent.trimEnd().length != 1 && element.textContent.trimEnd() != '/') {
-            e.preventDefault();
-            e.stopPropagation();
-            menu.onPageClick(e);
+    } else if (e.key == ' ') {
+        if (element && element.textContent.trimEnd() == '*') {
+            dispatch('unordered')
+        } else if (element && !isNaN(parseInt(element.textContent.trimEnd().slice(0, -1))) && !/\s/g.test(element.textContent.trimEnd().slice(0, -1))) {
+            dispatch('ordered')
         }
     }
+    if (!element.textContent.includes('/')) {
+        menu.onPageClick(e);
+    }
+    selText = element.textContent.replace('/', '').trimStart().trimEnd();
 }
 
 const focuslast = (e) => {
@@ -174,7 +176,7 @@ const mouseup = (e) => {
 const input = (e) => {
     let element = getActiveDiv();
     if (element && contents[element.title]) {
-        if (element.textContent == '' || element.textContent.trimEnd() == '') contents[element.title].content = ' ';
+        if (element.textContent.trimEnd() == '') contents[element.title].content = ' ';
         else contents[element.title].content = element.textContent.trimEnd();
     }
 }
@@ -206,12 +208,11 @@ $: {
     }
 }
 
-// <ContextMenu bind:this={menu} id={id} bind:selected={selected} />
-
+// <TextTool bind:this={menu} id={id} bind:selected={selected} />
 </script>
 
-
-<TextTool bind:this={menu} id={id} bind:selected={selected} />
+<ContextMenu bind:this={menu} id={id} bind:selected={selected} selText={selText} 
+    on:empty={(e) => menu.onPageClick(e)}/>
 <div class='flex flex-row flex-start'>
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->

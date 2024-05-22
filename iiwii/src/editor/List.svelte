@@ -58,7 +58,7 @@ const ondelete = (e, index) => {
     if (contents[index].content.length != 1) {
         contents[index].content.splice(i, 1);
     } else if (contents[index].content.length == 1 && contents.length == 1) {
-        contents[index]['content'][0]['content'] = '';
+        contents[index]['content'][0]['content'] = ' ';
     } else if (contents[index].content.length == 1 && contents.length > 1) {
         contents.splice(index, 1)
         if (index > 0) {

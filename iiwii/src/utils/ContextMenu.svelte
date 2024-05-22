@@ -5,13 +5,13 @@ import { MENU } from './constants';
 
 export let id;
 export let selected = false;
+export let selText = '';
 let top;
 let left;
 let bottom;
 let showMenu = false;
 let index;
 let item = [];
-
 let style = "";
 
 const dispatch = createEventDispatcher();
@@ -62,6 +62,22 @@ export const openMenu = (top_, left_, bottom_) => {
     if (body) body.style.overflowY = 'hidden';
 }
 
+$: {
+    selText;
+    let filtered = []
+    console.log(selText);
+    for (const item of MENU) {
+        for (const i of item.items) {
+            if (i.displayText.toLowerCase().includes(selText)) {
+                filtered.push(i.displayText);
+            }
+        }
+    }
+    if (filtered.length == 0) {
+        dispatch('empty')
+    }
+}
+
 </script>
 
 {#if showMenu}
@@ -74,10 +90,12 @@ export const openMenu = (top_, left_, bottom_) => {
             {#each MENU as item, index}
                 {#if item.items}
                 {#each item.items as i}
+                {#if i.displayText.toLowerCase().includes(selText.toLowerCase())}
                     <li on:click={() => menuClick(item.name, i.name)}>
                         <i class={`${i.class}`}></i>
                         {i.displayText}
                     </li>
+                {/if}
                 {/each}
                 {/if}
             {/each}
