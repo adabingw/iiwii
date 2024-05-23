@@ -74,7 +74,8 @@ export const setup = [
         ]
     },
     {
-        type: "unordered",
+        type: "ordered",
+        start: 3,
         id: 'a10f7afb-bda3-4395-8da4-121a24e4677e',
         content: [
             {

@@ -52,10 +52,10 @@ export const openMenu = (top_, left_, bottom_) => {
     top = top_;
     left = left_;
     bottom = bottom_;
-    if (bottom > 250) {
-        style = `position: absolute; top:${top + 15}px; left:${left}px; z-index: 1;`
+    if (top < 250) {
+        style = `position: absolute; top:${top + 30}px; left:${left}px; z-index: 1;`
     } else {
-        style = `position: absolute; bottom:${window.innerHeight - top + 5}px; left:${left}px; z-index: 1;`
+        style = `position: absolute; bottom:${window.innerHeight - bottom + 15}px; left:${left}px; z-index: 1;`
     }
     showMenu = true;
     let body = document.getElementById('homepage');
@@ -65,7 +65,6 @@ export const openMenu = (top_, left_, bottom_) => {
 $: {
     selText;
     let filtered = []
-    console.log(selText);
     for (const item of MENU) {
         for (const i of item.items) {
             if (i.displayText.toLowerCase().includes(selText)) {

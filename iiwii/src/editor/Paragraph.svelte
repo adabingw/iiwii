@@ -17,13 +17,16 @@ let menu;
 let tool;
 let lengths = [];
 const dispatch = createEventDispatcher();
+let shift = false;
 
-const keydown = (e) => {
+const keydown = (e) => {            
     let element = document.getElementById(id);
     let wrap = getWrapped(element, fontsize)
     if (element) {
         let caret = getOffset(element);
-        if (e.key == 'ArrowUp') {
+        if (e.key == 'Shift') {
+            shift = true;
+        } else if (e.key == 'ArrowUp') {
             let currLine = getCurrRow(caret, wrap);
             if (currLine == 1) {
                 dispatch('up', { index: caret })
@@ -36,18 +39,27 @@ const keydown = (e) => {
                 dispatch('down', { index: lineIndex })
             }
         } else if (e.key == 'ArrowRight') {
-            let len = lengths.reduce((p, a) => a + p, 0);
-            if (caret == len) {
-                dispatch('right')
+            if (shift) {
+                console.log('shifty right')
+                dispatch('shift-down', {type: 'right'})
+            } else {
+                let len = lengths.reduce((p, a) => a + p, 0);
+                if (caret == len) {
+                    dispatch('right')
+                }
             }
         } else if (e.key == 'ArrowLeft') {
-            if (caret == 0) {
-                dispatch('left')
+            if (shift) {
+                console.log('shifty left')
+                dispatch('shift-down', {type: 'left'})
+            } else {
+                if (caret == 0) {
+                    dispatch('left')
+                }
             }
         } else if (e.key == 'Backspace') {
             let el2 = getActiveDiv();
             let el2caret = getOffset(el2);
-            console.log(el2)
             if (caret == 0) {
                 dispatch('delete', {
                     index: element.title, 
@@ -63,7 +75,7 @@ const keydown = (e) => {
         } else if (e.key == 'Enter') {
             let el2 = getActiveDiv();       
             e.preventDefault();
-            e.stopPropagation();             
+            e.stopPropagation();
             if (el2) {
                 let caret = getOffset(element);
                 let bs = [];
@@ -116,7 +128,10 @@ const keyup = (e) => {
     } else if (ids.length == 1) {
         // highlight style in toolbox
     }
-    if (e.key == '/') {
+    if (e.key == 'Shift') {
+        shift = false;
+        dispatch('shift-up', {type: 'up'})
+    } else if (e.key == '/') {
         if (element && element.textContent.trimEnd().length == 1) {
             e.preventDefault();
             e.stopPropagation(); 
@@ -134,7 +149,7 @@ const keyup = (e) => {
         if (element && element.textContent.trimEnd() == '*') {
             dispatch('unordered')
         } else if (element && !isNaN(parseInt(element.textContent.trimEnd().slice(0, -1))) && !/\s/g.test(element.textContent.trimEnd().slice(0, -1))) {
-            dispatch('ordered')
+            dispatch('ordered', { start: parseInt(element.textContent.trimEnd().slice(0, -1))})
         }
     }
     if (!element.textContent.includes('/')) {
@@ -170,7 +185,6 @@ const mouseup = (e) => {
       window.getSelection().extentOffset, 
       window.getSelection().anchorOffset
     );
-    console.log('selection: ', selection)
 }
 
 const input = (e) => {
@@ -201,18 +215,17 @@ const addclick = (e) => {
 $: {
     contents;
     lengths = [];
-    console.log(contents)
     for (const content of contents) {
         if (content && content.content && content.length)
             lengths.push(content.content.length);
     }
 }
 
-// <TextTool bind:this={menu} id={id} bind:selected={selected} />
+// <ContextMenu bind:this={menu} id={id} bind:selected={selected} selText={selText} 
+//     on:empty={(e) => menu.onPageClick(e)}/>
 </script>
 
-<ContextMenu bind:this={menu} id={id} bind:selected={selected} selText={selText} 
-    on:empty={(e) => menu.onPageClick(e)}/>
+<TextTool bind:this={menu} id={id} bind:selected={selected} />
 <div class='flex flex-row flex-start'>
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->

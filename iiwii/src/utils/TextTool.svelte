@@ -3,6 +3,7 @@ import { createEventDispatcher } from 'svelte';
 import { clickOutside } from './utils.js';
 import { TOOL } from './constants';
 import ContextMenu from './ContextMenu.svelte';
+import { tooltip } from "@svelte-plugins/tooltips";
 
 export let id;
 export let selected;
@@ -46,7 +47,6 @@ const dropdown = (e) => {
             let top = rect.top;
             let bottom = rect.bottom;
             let left = rect.left;
-            console.log(top, left, bottom)
             let icons = document.getElementsByClassName('fa-plus');
             for (const icon of icons) {
                 icon.style.visibility = 'hidden';
@@ -98,7 +98,14 @@ export const openMenu = (top_, left_, bottom_) => {
             {#each TOOL as item, index}
                 {#if item.items}
                     {#each item.items as i}
-                        <span on:click={() => menuClick(item.name, i.name)}>
+                        <span on:click={() => menuClick(item.name, i.name)}
+                            use:tooltip={{
+                                content: `${i.displayText}`,
+                                style: { backgroundColor: '#515151', color: '#ffffff', padding: '5px 5px 5px 5px' },
+                                position: `top`,
+                                animation: 'slide',
+                                arrow: false
+                            }}>
                             <i class={`${i.class}`}></i>
                         </span>
                     {/each}

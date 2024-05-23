@@ -1,13 +1,14 @@
 <script>
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { focuspos, getWrapped, focusEnd, getOffsetFromIndex } from '../utils/utils';
+import { focuspos, getWrapped, focusEnd, getOffsetFromIndex, focusElement } from '../utils/utils';
 import {v4 as uuidv4} from 'uuid';
 import Paragraph from './Paragraph.svelte';
 
 export let contents = [];
 export let id;
 export let type;
+export let start = 1;
 
 const dispatch = createEventDispatcher();
 
@@ -24,20 +25,13 @@ const enterPresed = (e, index) => {
     }
     let id = uuidv4();
     let bs = e.detail.blocks;
-    console.log(bs)
     contents.splice(index + 1, 0, {
         type: 'text',
         id: id, 
         content: bs
     })
     contents = [...contents]
-    setTimeout(() => {
-        let newline = document.getElementById(id.toString());
-        if (newline) {
-            newline.focus();
-        }
-    }, 100);
-    console.log(contents)
+    focusElement(id);
     // dispatch('enter', e.detail.blocks)
 }
 
@@ -62,13 +56,8 @@ const ondelete = (e, index) => {
     } else if (contents[index].content.length == 1 && contents.length > 1) {
         contents.splice(index, 1)
         if (index > 0) {
-            setTimeout(() => {
-                let block = contents[index - 1]
-                let element = document.getElementById(block.id.toString());
-                if (element) {
-                    focusEnd(element);
-                }
-            }, 100);
+            let block = contents[index - 1]
+            focusElement(block.id)
         }
     }
     contents = [...contents]
@@ -153,7 +142,7 @@ const leftright = (index, direction) => {
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div >
 {#if type == 'ordered'}
-<ol class='list-decimal'>
+<ol class='list-decimal' start={start && start != 0 ? start : 1}>
     {#each contents as line, index}
         <Paragraph id={line.id} bind:contents={line.content} fontsize=16 type='list'
                 on:enter={(e) => enterPresed(e, index)}

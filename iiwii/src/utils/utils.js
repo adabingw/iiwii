@@ -93,6 +93,7 @@ export const getIndexFromOffset = (offset, wrapped) => {
     return offset;
 }
 
+// get the elements that have been selected
 export const getCoverage = (start, end, content) => {
     let cum = 0;
     let ids = [];
@@ -221,4 +222,13 @@ export function clickOutside(node) {
             document.removeEventListener('click', handleClick, true);
         }
     }
+}
+
+export function focusElement(id) {
+    setTimeout(() => {
+        let newline = document.getElementById(id.toString());
+        if (newline) {
+            newline.focus();
+        }
+    }, 100);
 }
