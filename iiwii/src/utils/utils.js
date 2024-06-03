@@ -93,13 +93,63 @@ export const getIndexFromOffset = (offset, wrapped) => {
     return offset;
 }
 
+export const getSelectionOffsets = (contentEditableElement) => {
+    let selection = window.getSelection();
+    let anchorNode = selection.anchorNode;
+    let focusNode = selection.focusNode;
+    let anchorOffset = selection.anchorOffset;
+    let focusOffset = selection.focusOffset;
+
+    function getTextOffset(node, offset) {
+        let length = 0;
+        let found = false;
+
+        function traverseNodes(currentNode) {
+            if (found) return;
+            if (currentNode.nodeType === Node.TEXT_NODE) {
+                if (currentNode === node) {
+                    length += offset;
+                    found = true;
+                } else {
+                    length += currentNode.textContent.length;
+                }
+            } else if (currentNode.nodeType === Node.ELEMENT_NODE) {
+                for (let i = 0; i < currentNode.childNodes.length; i++) {
+                    traverseNodes(currentNode.childNodes[i]);
+                    if (found) break;
+                }
+            }
+        }
+
+        traverseNodes(contentEditableElement);
+        return length;
+    }
+
+    // Calculate start and end offsets
+    let start = getTextOffset(anchorNode, anchorOffset);
+    let end = getTextOffset(focusNode, focusOffset);
+
+    // Ensure start is always less than or equal to end
+    if (start > end) {
+        [start, end] = [end, start];
+    }
+
+    return { start, end };
+}
+
 // get the elements that have been selected
 export const getCoverage = (start, end, content) => {
     let cum = 0;
     let ids = [];
     for (let i = 0; i < content.length; i++) {
-        // TODO: fix this
-        if (cum > start && cum < end) {
+        // start of selection occurs in this node
+        if (cum < start && cum + content[i].content.length > start) {
+            ids.push(i);
+        // selection covers the entire node
+        } else if (cum > start && cum + content[i].content.length < end) {
+            ids.push(i);
+        // end of selection occurs in this node
+        } else if (cum < end && cum + content[i].content.length > end) {
             ids.push(i);
         }
         cum += content[i].content.length;

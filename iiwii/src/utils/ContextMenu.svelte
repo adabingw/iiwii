@@ -55,7 +55,7 @@ export const openMenu = (top_, left_, bottom_) => {
     if (top < 250) {
         style = `position: absolute; top:${top + 30}px; left:${left}px; z-index: 1;`
     } else {
-        style = `position: absolute; bottom:${window.innerHeight - bottom + 15}px; left:${left}px; z-index: 1;`
+        style = `position: absolute; bottom:${window.innerHeight - bottom + 25}px; left:${left}px; z-index: 1;`
     }
     showMenu = true;
     let body = document.getElementById('homepage');

@@ -1,5 +1,5 @@
 <script>
-import { setup } from "../utils/constants";
+import { FONTSIZE, setup } from "../utils/constants";
 import {v4 as uuidv4} from 'uuid';
 import Paragraph from "./Paragraph.svelte";
 import { focusElement, focusEnd, focuspos, getOffset, getOffsetFromIndex, getWrapped } from "../utils/utils";
@@ -45,10 +45,6 @@ const textEnter = (e, index, type) => {
         });
     }
     blocks = [...blocks]
-}
-
-const onshift = (e, type, index) => {
-    
 }
 
 const ondelete = (e, index) => {
@@ -151,8 +147,7 @@ const updown = (e, index, direction) => {
 }
 
 // TODO: keep a record of the length 
-const leftright = (index, direction, e) => {
-    e.preventDefault();
+const leftright = (index, direction) => {
     if (direction == 'left') {
         if (index == 0) return;
         let block;
@@ -182,10 +177,39 @@ const leftright = (index, direction, e) => {
     }
 }
 
+const shiftdown = (e, index) => {
+    if (e.detail.type == 'left') {
+        if (index == 0) return;
+        let block;
+        if (blocks[index - 1].type == 'ordered' || blocks[index - 1].type == 'unordered') {
+            let c = blocks[index - 1].content;
+            if (c.length < 1) return;
+            block = document.getElementById(c[c.length - 1].id.toString());
+        } else {
+            block = document.getElementById(blocks[index - 1].id.toString());
+        }
+        if (block) {
+            extendSelection(block, false);
+        }
+    } else {
+        if (index == blocks.length - 1) return;
+        let block;
+        if (blocks[index + 1].type == 'ordered' || blocks[index + 1].type == 'unordered') {
+            let c = blocks[index + 1].content;
+            if (c.length < 1) return;
+            block = document.getElementById(c[0].id.toString());
+        } else {
+            block = document.getElementById(blocks[index + 1].id.toString());
+        }
+        if (block) {
+            block.focus();
+        }
+    }
+}
+
 const makeList = (e, type, index) => {
     e.preventDefault();
     let id = uuidv4();
-    console.log(blocks[index])
     let content = {...blocks[index]};
     let id2 = content.id;
     for (let i = 0; i < content.content.length; i++) {
@@ -197,51 +221,30 @@ const makeList = (e, type, index) => {
     blocks[index].id = id;
     blocks[index].content = [content];
     focusElement(id2);
-    console.log(blocks[index])   
 }
 
 </script>
 
 <div class="px-72 pt-10" id='breh'>
 {#each blocks as item, index}
-    {#if item.type == 'text'}
-        <Paragraph id={item.id} bind:contents={item.content} fontsize=16
+    {#if item.type == 'text' || item.type == 'h1' || item.type == 'h2' || item.type == 'h3'}
+        <Paragraph id={item.id} bind:contents={item.content} fontsize={FONTSIZE[item.type]}
             on:enter={(e) => enterPresed(e, index, 'text')}
             on:delete={(e) => ondelete(e, index)} 
+            on:shift-down={(e) => shiftdown(e, index)}
             on:ordered={(e) => makeList(e, 'ordered', index)} on:unordered={(e) => makeList(e, 'unordered', index)} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
-            on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left', e)}/>
-    {:else if item.type == 'h1'}
-        <Paragraph id={item.id} bind:contents={item.content} fontsize=28
-                on:enter={(e) => enterPresed(e, index, 'h1')}
-                on:delete={(e) => ondelete(e, index)} 
-                on:ordered={(e) => makeList(e, 'ordered', index)} on:unordered={(e) => makeList(e, 'unordered', index)} 
-                on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
-                on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left', e)}/>
-    {:else if item.type == 'h2'}
-        <Paragraph id={item.id} bind:contents={item.content} fontsize=24
-                on:enter={(e) => enterPresed(e, index, 'h2')}
-                on:delete={(e) => ondelete(e, index)} 
-                on:ordered={(e) => makeList(e, 'ordered', index)} on:unordered={(e) => makeList(e, 'unordered', index)} 
-                on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
-                on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left', e)}/>
-    {:else if item.type == 'h3'}
-        <Paragraph id={item.id} bind:contents={item.content} fontsize=20
-                on:enter={(e) => enterPresed(e, index, 'h3')}
-                on:delete={(e) => ondelete(e, index)} 
-                on:ordered={(e) => makeList(e, 'ordered', index)} on:unordered={(e) => makeList(e, 'unordered', index)} 
-                on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
-                on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left', e)}/>
+            on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')} />
     {:else if item.type == 'ordered'}
         <List id={item.id} bind:contents={item.content} type='ordered' start={item.start}
-            on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right', e)} 
+            on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
             on:text={(e) => textEnter(e, index, 'ordered')} />
     {:else if item.type == 'unordered'}
         <List id={item.id} bind:contents={item.content} type='unordered' 
-            on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right', e)} 
+            on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
-            on:text={(e) => textEnter(e, index, 'unordered')}/>
+            on:text={(e) => textEnter(e, index, 'unordered')} />
     {/if}
 {/each}
 </div>

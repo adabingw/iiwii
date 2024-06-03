@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@svelte-plugins/tooltips": "^3.0.1",
+    "svelte-awesome-color-picker": "^3.1.0",
     "totp-generator": "^1.0.0",
     "uuid": "^9.0.1"
   }

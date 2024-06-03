@@ -10,6 +10,8 @@ export const setup = [
                     'bold': true, 
                     'italics': false,
                     'underline': false,
+                    'code': false,
+                    'strikethrough': false,
                     'color': '#000000'
                 }
             }
@@ -26,13 +28,15 @@ export const setup = [
                     'bold': false, 
                     'italics': false,
                     'underline': false,
+                    'code': false,
+                    'strikethrough': false,
                     'color': '#000000'
                 }
             }
         ]
     },
     {
-        type: 'h3',
+        type: 'text',
         id: '5bb9b175-ae25-4999-be06-575391d732ef',
         content: [
             {
@@ -41,7 +45,9 @@ export const setup = [
                 style: {
                     'bold': false, 
                     'italics': false,
-                    'underline': false,
+                    'underline': true,
+                    'code': false,
+                    'strikethrough': true,
                     'color': '#000000'
                 }
             }
@@ -58,6 +64,8 @@ export const setup = [
                     'bold': false, 
                     'italics': false,
                     'underline': false,
+                    'code': false,
+                    'strikethrough': false,
                     'color': '#000000'
                 }
             },
@@ -67,7 +75,9 @@ export const setup = [
                 style: {
                     'bold': true, 
                     'italics': true,
-                    'underline': false,
+                    'underline': true,
+                    'code': false,
+                    'strikethrough': false,
                     'color': '#5f7546'
                 }
             },
@@ -89,6 +99,8 @@ export const setup = [
                             'bold': false, 
                             'italics': false,
                             'underline': false,
+                            'code': false,
+                            'strikethrough': false,
                             'color': '#000000'
                         }
                     },
@@ -99,6 +111,8 @@ export const setup = [
                             'bold': false, 
                             'italics': false,
                             'underline': true,
+                            'code': false,
+                            'strikethrough': false,
                             'color': '#8c709c'
                         }
                     }
@@ -109,12 +123,14 @@ export const setup = [
                 id: 'e33be222-ef93-4b4f-a9b8-42935a497e5f',
                 content: [
                     {
-                        content: 'a',
+                        content: 'this part looks like code',
                         id: 'f564af9e-8c8a-4f24-a615-cc552991562f',
                         style: {
-                            'bold': false, 
-                            'italics': false,
-                            'underline': false,
+                            'bold': true, 
+                            'italics': true,
+                            'underline': true,
+                            'code': true,
+                            'strikethrough': false,
                             'color': '#000000'
                         }
                     }
@@ -131,6 +147,8 @@ export const setup = [
                             'bold': false, 
                             'italics': false,
                             'underline': false,
+                            'code': false,
+                            'strikethrough': false,
                             'color': '#000000'
                         }
                     }
@@ -139,6 +157,13 @@ export const setup = [
         ]
     } 
 ]
+
+export const FONTSIZE = {
+    'text': 16,
+    'h1': 28,
+    'h2': 24,
+    'h3': 20
+}
 
 export const MENU = [
     {
@@ -178,6 +203,11 @@ export const TOOL = [
     {
         'name': 'transform',
         'displayText': "Turn into",
+        'class': 'fa-solid fa-arrow-right-arrow-left fa-xs fa-fw'
+    },
+    {
+        'name': 'color',
+        'displayText': "Colour",
         'class': 'fa-solid fa-arrow-right-arrow-left fa-xs fa-fw'
     },
     {

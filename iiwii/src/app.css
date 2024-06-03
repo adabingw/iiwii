@@ -19,6 +19,8 @@
 
   --dark-main: #222831;
   --dark-highlight: #393E46;
+
+  scrollbar-width: thin;
 }
 
 body {

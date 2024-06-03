@@ -1,7 +1,7 @@
 <script>
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { focuspos, getActiveDiv, getOffset, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex, getCoverage } from '../utils/utils';
+import { focuspos, getActiveDiv, getOffset, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex, getCoverage, getSelectionOffsets } from '../utils/utils';
 import {v4 as uuidv4} from 'uuid';
   import ContextMenu from '../utils/ContextMenu.svelte';
   import TextTool from '../utils/TextTool.svelte';
@@ -15,6 +15,7 @@ let selText = '';
 let selected = false;
 let menu;
 let tool;
+let toolSelected = false;
 let lengths = [];
 const dispatch = createEventDispatcher();
 let shift = false;
@@ -27,11 +28,15 @@ const keydown = (e) => {
         if (e.key == 'Shift') {
             shift = true;
         } else if (e.key == 'ArrowUp') {
+            // TODO: implement cross section selection
+            if (shift) return;
             let currLine = getCurrRow(caret, wrap);
             if (currLine == 1) {
                 dispatch('up', { index: caret })
             }
         } else if (e.key == 'ArrowDown') {
+            // TODO: implement cross section selection
+            if (shift) return;
             let lines = wrap.length;
             let currLine = getCurrRow(caret, wrap);
             let lineIndex = getIndexFromOffset(caret, currLine);
@@ -39,22 +44,23 @@ const keydown = (e) => {
                 dispatch('down', { index: lineIndex })
             }
         } else if (e.key == 'ArrowRight') {
-            if (shift) {
-                console.log('shifty right')
-                dispatch('shift-down', {type: 'right'})
-            } else {
-                let len = lengths.reduce((p, a) => a + p, 0);
-                if (caret == len) {
-                    dispatch('right')
+            let len = lengths.reduce((p, a) => a + p, 0);
+            if (caret == len) {
+                if (shift) {
+                    console.log('shifty right');
+                    // dispatch('shift-down', {type: 'right'});
+                } else {
+                    dispatch('right');
                 }
             }
         } else if (e.key == 'ArrowLeft') {
-            if (shift) {
-                console.log('shifty left')
-                dispatch('shift-down', {type: 'left'})
-            } else {
-                if (caret == 0) {
-                    dispatch('left')
+            let { start, end } = getSelectionOffsets(element);
+            if (caret == 0 || (shift && start == 0)) {
+                if (shift) {
+                    console.log('shifty left');
+                    // dispatch('shift-down', {type: 'left'});
+                } else {
+                    dispatch('left');
                 }
             }
         } else if (e.key == 'Backspace') {
@@ -115,20 +121,30 @@ const keydown = (e) => {
 }
 
 const keyup = (e) => {
-    let start = window.getSelection().extentOffset;
-    let end = window.getSelection().anchorOffset;
     let element = document.getElementById(id);
-    let selection = window.getSelection().anchorNode.textContent.substring(
-      start, 
-      end
-    );
-    let ids = getCoverage(start, end, contents);
-    if (ids.length > 1) {
-        // don't highlight style in toolbox
-    } else if (ids.length == 1) {
-        // highlight style in toolbox
-    }
-    if (e.key == 'Shift') {
+    if ((e.key == 'ArrowRight' || e.key == 'ArrowLeft' || e.key == 'ArrowUp' || e.key == 'ArrowDown')) {
+        if (shift) {
+            let { start, end } = getSelectionOffsets(element);
+            let ids = getCoverage(start, end, contents);
+            const rect = element.getBoundingClientRect();
+            let top = rect.top;
+            let bottom = rect.bottom;
+            let left = rect.left;
+            let icons = document.getElementsByClassName('fa-plus');
+            for (const icon of icons) {
+                icon.style.visibility = 'hidden';
+            }
+            if (ids.length > 1) {
+                tool.openMenu(top, left, bottom, undefined);
+                // don't highlight style in toolbox
+            } else if (ids.length == 1) {
+                tool.openMenu(top, left, bottom, contents[ids[0]].style);
+                // highlight style in toolbox
+            }
+        } else {
+            tool.onPageClick(e);
+        }
+    } else if (e.key == 'Shift') {
         shift = false;
         dispatch('shift-up', {type: 'up'})
     } else if (e.key == '/') {
@@ -180,18 +196,40 @@ const focuslast = (e) => {
     } 
 }
 
-const mouseup = (e) => {
-    let selection = window.getSelection().anchorNode.textContent.substring(
-      window.getSelection().extentOffset, 
-      window.getSelection().anchorOffset
-    );
+const mouseup = (e, index) => {
+    e.stopPropagation();
+    e.preventDefault();
+    let element = document.getElementById(id);
+    let { start, end } = getSelectionOffsets(element);
+    if (start != end) {
+        let ids = getCoverage(start, end, contents);
+        const rect = element.getBoundingClientRect();
+        let top = rect.top;
+        let bottom = rect.bottom;
+        let left = rect.left;
+        let icons = document.getElementsByClassName('fa-plus');
+        for (const icon of icons) {
+            icon.style.visibility = 'hidden';
+        }
+        if (ids.length > 1) {
+            tool.openMenu(top, left, bottom, undefined, true);
+            // don't highlight style in toolbox
+        } else if (ids.length == 1) {
+            tool.openMenu(top, left, bottom, contents[ids[0]].style, true);
+            // highlight style in toolbox
+        }
+    }
 }
 
 const input = (e) => {
     let element = getActiveDiv();
     if (element && contents[element.title]) {
         if (element.textContent.trimEnd() == '') contents[element.title].content = ' ';
-        else contents[element.title].content = element.textContent.trimEnd();
+        else {
+            // TODO: fix weird behaviour this leads to
+            // contents[element.title].content = element.textContent.trimEnd();
+            // element.textContent = contents[element.title].content;
+        }
     }
 }
 
@@ -216,16 +254,15 @@ $: {
     contents;
     lengths = [];
     for (const content of contents) {
-        if (content && content.content && content.length)
+        if (content && content.content)
             lengths.push(content.content.length);
     }
 }
 
-// <ContextMenu bind:this={menu} id={id} bind:selected={selected} selText={selText} 
-//     on:empty={(e) => menu.onPageClick(e)}/>
 </script>
 
-<TextTool bind:this={menu} id={id} bind:selected={selected} />
+<ContextMenu bind:this={menu} id={id} bind:selected={selected} selText={selText} on:empty={(e) => menu.onPageClick(e)}/>
+<TextTool bind:this={tool} id={id} bind:selected={toolSelected} />
 <div class='flex flex-row flex-start'>
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -238,16 +275,22 @@ $: {
 {#if type == 'text'}
 <div on:mousedown={focuslast} class='hover:cursor-text  cursor-text whitespace-pre-wrap text-wrap break-all'>
 <span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
-on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)}
+on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)}
 style={`line-height: 18px;`}>
-
     {#each contents as content, index}
+    
     <span 
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
-                ${content.style.underline ? 'underline underline-offset-8' : ''} 
+                ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
+                ${content.content.trimEnd().length > 0 && content.style.underline ? content.style.strikethrough ? 'border-b-2' : 'underline underline-offset-8' : ''} 
                 whitespace-pre-wrap editableSpan text-wrap break-all`} 
-        style={`color: ${content.style.color}; font-size: ${fontsize}px; line-height: ${parseInt(fontsize) + 8}px`} 
+        style={`
+            color: ${content.style.color}; 
+            font-size: ${fontsize}px; 
+            line-height: ${parseInt(fontsize) + 8}px;
+            border-color: ${content.style.color}
+        `} 
         title={index.toString()} id={content.id}>{#if content.content.length != 0}{content.content}{/if}</span>
     {/each}
 </span>
@@ -256,16 +299,22 @@ style={`line-height: 18px;`}>
 <li class='hover:cursor-text  cursor-text'>
 <span on:mousedown={focuslast} class='whitespace-pre-wrap text-wrap break-all'>
 <span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
-on:keydown={keydown} on:input={(e) => input(e)} on:keyup={keyup}
+on:keydown={keydown} on:input={(e) => input(e)} on:keyup={keyup} on:mouseup={(e) => mouseup(e)}
 style={`line-height: 18px;`}>
     {#each contents as content, index}
     <span 
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
-                ${content.style.underline ? 'underline underline-offset-8' : ''} 
+                ${content.style.underline ? content.style.strikethrough ? 'border-b-2' : 'underline underline-offset-12' : ''}  
+                ${content.style.strikethrough ? 'line-through' : ''}
                 whitespace-pre-wrap editableSpan text-wrap break-all`} 
-        style={`color: ${content.style.color}; font-size: ${fontsize}px; line-height: ${parseInt(fontsize) + 8}px`} 
-        title={index.toString()} id={content.id}>{#if content.content.length != 0}{content.content}{/if}</span>
+        style={`
+            color: ${content.style.color}; 
+            font-size: ${fontsize}px; 
+            line-height: ${parseInt(fontsize) + 8}px;
+            border-color: ${content.style.color}
+        `}  
+        title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span>
     {/each}
 </span>
 </span>
