@@ -125,7 +125,7 @@ const keyup = (e) => {
     if ((e.key == 'ArrowRight' || e.key == 'ArrowLeft' || e.key == 'ArrowUp' || e.key == 'ArrowDown')) {
         if (shift) {
             let { start, end } = getSelectionOffsets(element);
-            let ids = getCoverage(start, end, contents);
+            let [ids, srange] = getCoverage(start, end, contents);
             const rect = element.getBoundingClientRect();
             let top = rect.top;
             let bottom = rect.bottom;
@@ -135,10 +135,10 @@ const keyup = (e) => {
                 icon.style.visibility = 'hidden';
             }
             if (ids.length > 1) {
-                tool.openMenu(top, left, bottom, undefined);
+                tool.openMenu(top, left, bottom, undefined, [ids, srange], [start, end]);
                 // don't highlight style in toolbox
             } else if (ids.length == 1) {
-                tool.openMenu(top, left, bottom, contents[ids[0]].style);
+                tool.openMenu(top, left, bottom, contents[ids[0]].style, [ids, srange], [start, end]);
                 // highlight style in toolbox
             }
         } else {
@@ -202,7 +202,7 @@ const mouseup = (e, index) => {
     let element = document.getElementById(id);
     let { start, end } = getSelectionOffsets(element);
     if (start != end) {
-        let ids = getCoverage(start, end, contents);
+        let [ids, text] = getCoverage(start, end, contents);
         const rect = element.getBoundingClientRect();
         let top = rect.top;
         let bottom = rect.bottom;
@@ -250,6 +250,80 @@ const addclick = (e) => {
     }
 }
 
+const toolcontroller = (e) => {
+    const context = e.detail.context;
+    const subcontext = e.detail.subcontext;         // styles we are applying
+    const value = e.detail.value;
+    const [elements, srange] = e.detail.elements;     // elements that are being applied
+    const [start, end] = e.detail.range;            // range in the elements we are applying the styles
+    console.log(context, subcontext, elements, value, srange, [start, end]);
+    if (context == 'elements') {
+        for (let i = 0; i < elements.length; i++) {
+            if (i >= contents.length) console.error('toolcontroller id greater than length');
+            // TODO: problem - deep copy
+            let newNode = {...contents[i]}
+            let id = uuidv4();        
+            newNode.id = id;
+            newNode['style'][subcontext] = value;    
+            if (elements.length == 1) {
+                console.log('hi')
+                if (srange[0] == 0 && srange[1] == contents[i].content.length) { // ship entire thing
+                    console.log('1')
+                    contents[i]['style'][subcontext] = value;
+                } else if (srange[0] == 0) { // new + old
+                    console.log('2')
+                    newNode.content = contents[i].content.substring(0, srange[1]);
+                    contents[i].content = contents[i].content.substring(srange[1]);
+                    contents.splice(i, 0, newNode);
+                } else if (srange[1] == contents[i].content.length) { // old + new
+                    console.log('3')
+                    newNode.content = contents[i].content.substring(srange[0]);
+                    contents[i].content = contents[i].content.substring(0, srange[0]);
+                    contents.splice(i + 1, 0, newNode);
+                } else { // old + new + old
+                    console.log('4')
+                    newNode.content = contents[i].content.substring(srange[0], srange[1]);
+
+                    let oldNode = {...contents[i]}
+                    let id2 = uuidv4();        
+                    oldNode.id = id2;
+                    oldNode.content = contents[i].content.substring(srange[1]);
+
+                    contents[i].content = contents[i].content.substring(0, srange[0]);
+                    contents.splice(i + 1, 0, oldNode);
+                    contents.splice(i + 1, 0, newNode);
+                }
+            } else if (i == 0) {
+                if (srange[0] == 0) { // ship entire thing
+                    contents[i]['style'][subcontext] = value;
+                } else { // ship start of selection -> end of node
+                    newNode.content = contents[i].content.substring(srange[0]);
+                    contents[i].content = contents[i].content.substring(0, srange[0]);
+                    contents.splice(i + 1, 0, newNode);
+                }                
+            } else if (i == elements.length - 1) {
+                if (srange[1] == contents[i].content.length) { // ship entire thing
+                    contents[i]['style'][subcontext] = value;
+                } else { // start -> end of select
+                    newNode.content = contents[i].content.substring(0, srange[1]);
+                    contents[i].content = contents[i].content.substring(srange[1]);
+                    contents.splice(i, 0, newNode);
+                }
+            } else { // this entire nde is selected, so we can just take the entire thing and just apply the style
+                contents[i]['style'][subcontext] = value;
+            }
+        }
+        // create node
+        // remove text + nodes from original
+        // insert node
+    } else if (context == 'transform') {
+
+    } else if (context == 'color') {
+
+    }
+    // TODO: merge if same style
+}
+
 $: {
     contents;
     lengths = [];
@@ -262,7 +336,7 @@ $: {
 </script>
 
 <ContextMenu bind:this={menu} id={id} bind:selected={selected} selText={selText} on:empty={(e) => menu.onPageClick(e)}/>
-<TextTool bind:this={tool} id={id} bind:selected={toolSelected} />
+<TextTool bind:this={tool} id={id} bind:selected={toolSelected} on:tool={(e) => toolcontroller(e)} />
 <div class='flex flex-row flex-start'>
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -282,6 +356,7 @@ style={`line-height: 18px;`}>
     <span 
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
+                ${content.content.trimEnd().length > 0 && content.style.code ? 'code' : ''}
                 ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
                 ${content.content.trimEnd().length > 0 && content.style.underline ? content.style.strikethrough ? 'border-b-2' : 'underline underline-offset-8' : ''} 
                 whitespace-pre-wrap editableSpan text-wrap break-all`} 
@@ -291,7 +366,7 @@ style={`line-height: 18px;`}>
             line-height: ${parseInt(fontsize) + 8}px;
             border-color: ${content.style.color}
         `} 
-        title={index.toString()} id={content.id}>{#if content.content.length != 0}{content.content}{/if}</span>
+        title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span>
     {/each}
 </span>
 </div>
@@ -305,6 +380,7 @@ style={`line-height: 18px;`}>
     <span 
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
+                ${content.content.trimEnd().length > 0 && content.style.code ? 'code' : ''}
                 ${content.style.underline ? content.style.strikethrough ? 'border-b-2' : 'underline underline-offset-12' : ''}  
                 ${content.style.strikethrough ? 'line-through' : ''}
                 whitespace-pre-wrap editableSpan text-wrap break-all`} 
@@ -332,6 +408,14 @@ i {
 
 .selected {
     opacity: 1;
+}
+
+.code {
+    background-color: #dedede;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-bottom: 3px;
+    border-radius: 5px;
 }
 
 i:hover {

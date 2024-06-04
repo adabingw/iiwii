@@ -14,15 +14,15 @@ let left;
 let bottom;
 let showMenu = false;
 let index;
+let range;
 let menu;
-let item = [];
 let turninto = false;
 let style = "";
 let firstShown = false;
 
 const dispatch = createEventDispatcher();
 
-const menuClick = (context, subcontext) => {
+const menuClick = (context, subcontext, value) => {
     showMenu = false; 
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'auto';
@@ -31,12 +31,20 @@ const menuClick = (context, subcontext) => {
     for (const icon of icons) {
         icon.style.visibility = 'visible';
     }
-    dispatch('context', {
-        context: context,
-        subcontext: subcontext,
-        index: index, 
-        item: item
-    })
+
+    console.log(context, subcontext)
+
+    if (context == 'elements') {
+        dispatch('tool', {
+            context: context,
+            subcontext: subcontext,
+            elements: index,
+            range: range,
+            value: value
+        })
+    } else {
+
+    }
 }
 
 const dropdown = (e) => {
@@ -78,8 +86,10 @@ export const onPageClick = (e) => {
     dispatch('close')
 }
 
-export const openMenu = (top_, left_, bottom_, textStyle_, flagFirst = false) => {
+export const openMenu = (top_, left_, bottom_, textStyle_, index_, range_, flagFirst = false) => {
     firstShown = flagFirst;
+    index = index_;
+    range = range_;
     textStyle = textStyle_;
     showMenu = false;
     top = top_;
@@ -107,12 +117,13 @@ export const openMenu = (top_, left_, bottom_, textStyle_, flagFirst = false) =>
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->  
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div style={style} class:show={showMenu} use:clickOutside on:click_outside={onPageClick}>
+    <!-- TODO:  -->
     <ContextMenu bind:this={menu} id={id} />
     <div class={`navbar`} id="navbar">
             {#each TOOL as item, index}
                 {#if item.items}
                     {#each item.items as i}
-                        <span on:click={() => menuClick(item.name, i.name)}
+                        <span on:click={() => menuClick(item.name, i.name, textStyle && textStyle[i.name] ? !textStyle[i.name] : 'true')}
                             class={textStyle && textStyle[i.name] ? 'in-use' : ''}
                             use:tooltip={{
                                 content: `${i.displayText}`,
@@ -126,6 +137,7 @@ export const openMenu = (top_, left_, bottom_, textStyle_, flagFirst = false) =>
                     {/each}
                 {:else if item.name == 'color'}
                     <span class="pt-3">
+                        <!-- TODO: -->
                         <ColorPicker
                             --picker-z-index="9999"
                             label={textStyle && textStyle[item.name] ? textStyle[item.name] : '#000000'}

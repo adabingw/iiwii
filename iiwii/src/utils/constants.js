@@ -158,6 +158,38 @@ export const setup = [
     } 
 ]
 
+export const PARAGRAPH = {
+    type: 'h1',
+    id: '9e7bc2a7-885d-46aa-9a1e-c1673a25ed28',
+    content: [
+        {
+            content: 'welcome to iiwii (it is what it is)',
+            id: 'fed2882d-d1b0-43ef-8c1d-861e6ee278bf',
+            style: {
+                'bold': true, 
+                'italics': false,
+                'underline': false,
+                'code': false,
+                'strikethrough': false,
+                'color': '#000000'
+            }
+        }
+    ]
+}
+
+export const NODE = {
+    content: 'welcome to iiwii (it is what it is)',
+    id: 'fed2882d-d1b0-43ef-8c1d-861e6ee278bf',
+    style: {
+        'bold': true, 
+        'italics': false,
+        'underline': false,
+        'code': false,
+        'strikethrough': false,
+        'color': '#000000'
+    }
+}
+
 export const FONTSIZE = {
     'text': 16,
     'h1': 28,

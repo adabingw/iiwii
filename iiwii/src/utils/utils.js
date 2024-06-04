@@ -141,20 +141,30 @@ export const getSelectionOffsets = (contentEditableElement) => {
 export const getCoverage = (start, end, content) => {
     let cum = 0;
     let ids = [];
+    let srange = [0, 0];
     for (let i = 0; i < content.length; i++) {
         // start of selection occurs in this node
-        if (cum < start && cum + content[i].content.length > start) {
+        if (cum <= start && cum + content[i].content.length > start) {
             ids.push(i);
+            // select entirely in one node
+            if (cum + content[i].content.length >= end) {
+                srange = [start - cum, end - cum]
+            } 
+            // select starts in this node
+            else {
+                srange[0] = start - cum;
+            }
         // selection covers the entire node
         } else if (cum > start && cum + content[i].content.length < end) {
             ids.push(i);
         // end of selection occurs in this node
-        } else if (cum < end && cum + content[i].content.length > end) {
+        } else if (cum < end && cum + content[i].content.length >= end) {
             ids.push(i);
+            srange[1] = end - cum;
         }
         cum += content[i].content.length;
     }
-    return ids;
+    return [ids, srange];
 }
 
 // returns array of text at places of textwrap
