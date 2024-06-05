@@ -40,7 +40,7 @@ const menuClick = (context, subcontext, value) => {
             subcontext: subcontext,
             elements: index,
             range: range,
-            value: value
+            value: value == 'true'
         })
     } else {
 
@@ -95,19 +95,23 @@ export const openMenu = (top_, left_, bottom_, textStyle_, index_, range_, flagF
     top = top_;
     left = left_;
     bottom = bottom_;
-    // if (bottom > 200) {
-    //     style = `position: absolute; top:${bottom + 5}px; left:${left}px; z-index: 1;`
-    // } else {
-    //     style = `position: absolute; bottom:${window.innerHeight - top + 5}px; left:${left}px; z-index: 1;`
-    // }
     if (top < 250) {
-        style = `position: absolute; top:${top + 30}px; left:${left}px; z-index: 1;`
+        style = `position: absolute; top:${bottom + 10}px; left:${left}px; z-index: 1;`
     } else {
-        style = `position: absolute; bottom:${window.innerHeight - bottom + 25}px; left:${left}px; z-index: 1;`
+        style = `position: absolute; bottom:${window.innerHeight - top + 15}px; left:${left}px; z-index: 1;`
     }
     showMenu = true;
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'hidden';
+}
+
+const contextController = (e) => {
+    let subcontext = e.detail.subcontext;
+    console.log(subcontext)
+    dispatch('tool', {
+        context: 'transform',
+        subcontext: subcontext
+    })
 }
 
 </script>
@@ -117,8 +121,7 @@ export const openMenu = (top_, left_, bottom_, textStyle_, index_, range_, flagF
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->  
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div style={style} class:show={showMenu} use:clickOutside on:click_outside={onPageClick}>
-    <!-- TODO:  -->
-    <ContextMenu bind:this={menu} id={id} />
+    <ContextMenu bind:this={menu} id={id} on:context={(e) => contextController(e)}/>
     <div class={`navbar`} id="navbar">
             {#each TOOL as item, index}
                 {#if item.items}

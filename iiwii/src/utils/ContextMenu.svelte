@@ -10,8 +10,6 @@ let top;
 let left;
 let bottom;
 let showMenu = false;
-let index;
-let item = [];
 let style = "";
 
 const dispatch = createEventDispatcher();
@@ -27,9 +25,7 @@ const menuClick = (context, subcontext) => {
     }
     dispatch('context', {
         context: context,
-        subcontext: subcontext,
-        index: index, 
-        item: item
+        subcontext: subcontext
     })
 }
 

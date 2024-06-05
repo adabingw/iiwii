@@ -74,11 +74,11 @@ export const setup = [
                 id: '8beb2661-d206-4404-aefb-0cb9b63d46d8',
                 style: {
                     'bold': true, 
-                    'italics': true,
-                    'underline': true,
+                    'italics': false,
+                    'underline': false,
                     'code': false,
                     'strikethrough': false,
-                    'color': '#5f7546'
+                    'color': '#000000'
                 }
             },
         ]

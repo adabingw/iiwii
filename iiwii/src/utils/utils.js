@@ -265,6 +265,30 @@ export const invertColor = (hexString) => {
     return `#${r}${g}${b}`;
 }
 
+export const deepEqual = (obj1, obj2) => {
+    // Check if both arguments are objects
+    if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 === null || obj2 === null) {
+        return obj1 === obj2;
+    }
+
+    // Check if they have the same number of keys
+    let keys1 = Object.keys(obj1);
+    let keys2 = Object.keys(obj2);
+    
+    if (keys1.length !== keys2.length) {
+        return false;
+    }
+
+    // Check if all keys and values are the same
+    for (let key of keys1) {
+        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 /** Dispatch event on click outside of node */
 export function clickOutside(node) {
     const handleClick = event => {

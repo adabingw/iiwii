@@ -1,7 +1,7 @@
 <script>
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { focuspos, getActiveDiv, getOffset, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex, getCoverage, getSelectionOffsets } from '../utils/utils';
+import { focuspos, getActiveDiv, getOffset, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex, getCoverage, getSelectionOffsets, deepEqual } from '../utils/utils';
 import {v4 as uuidv4} from 'uuid';
   import ContextMenu from '../utils/ContextMenu.svelte';
   import TextTool from '../utils/TextTool.svelte';
@@ -19,6 +19,7 @@ let toolSelected = false;
 let lengths = [];
 const dispatch = createEventDispatcher();
 let shift = false;
+let ctrl = false;
 
 const keydown = (e) => {            
     let element = document.getElementById(id);
@@ -27,6 +28,8 @@ const keydown = (e) => {
         let caret = getOffset(element);
         if (e.key == 'Shift') {
             shift = true;
+        } else if (e.key == 'Control') {
+            ctrl = true;
         } else if (e.key == 'ArrowUp') {
             // TODO: implement cross section selection
             if (shift) return;
@@ -127,18 +130,15 @@ const keyup = (e) => {
             let { start, end } = getSelectionOffsets(element);
             let [ids, srange] = getCoverage(start, end, contents);
             const rect = element.getBoundingClientRect();
-            let top = rect.top;
-            let bottom = rect.bottom;
-            let left = rect.left;
             let icons = document.getElementsByClassName('fa-plus');
             for (const icon of icons) {
                 icon.style.visibility = 'hidden';
             }
             if (ids.length > 1) {
-                tool.openMenu(top, left, bottom, undefined, [ids, srange], [start, end]);
+                tool.openMenu(rect.top, rect.left, rect.bottom, undefined, [ids, srange], [start, end]);
                 // don't highlight style in toolbox
             } else if (ids.length == 1) {
-                tool.openMenu(top, left, bottom, contents[ids[0]].style, [ids, srange], [start, end]);
+                tool.openMenu(rect.top, rect.left, rect.bottom, contents[ids[0]].style, [ids, srange], [start, end]);
                 // highlight style in toolbox
             }
         } else {
@@ -147,19 +147,18 @@ const keyup = (e) => {
     } else if (e.key == 'Shift') {
         shift = false;
         dispatch('shift-up', {type: 'up'})
+    } else if (e.key == 'Control') {
+        ctrl = false;
     } else if (e.key == '/') {
-        if (element && element.textContent.trimEnd().length == 1) {
+        if (element && (element.textContent.trimEnd().length == 1 || element.textContent.trimStart().length == 1)) {
             e.preventDefault();
             e.stopPropagation(); 
             const rect = element.getBoundingClientRect();
-            let top = rect.top;
-            let bottom = rect.bottom;
-            let left = rect.left;
             let icons = document.getElementsByClassName('fa-plus');
             for (const icon of icons) {
                 icon.style.visibility = 'hidden';
             }
-            menu.openMenu(top, left, bottom);
+            menu.openMenu(rect.top, rect.left, rect.bottom);
         }
     } else if (e.key == ' ') {
         if (element && element.textContent.trimEnd() == '*') {
@@ -202,20 +201,17 @@ const mouseup = (e, index) => {
     let element = document.getElementById(id);
     let { start, end } = getSelectionOffsets(element);
     if (start != end) {
-        let [ids, text] = getCoverage(start, end, contents);
+        let [ids, srange] = getCoverage(start, end, contents);
         const rect = element.getBoundingClientRect();
-        let top = rect.top;
-        let bottom = rect.bottom;
-        let left = rect.left;
         let icons = document.getElementsByClassName('fa-plus');
         for (const icon of icons) {
             icon.style.visibility = 'hidden';
         }
         if (ids.length > 1) {
-            tool.openMenu(top, left, bottom, undefined, true);
+            tool.openMenu(rect.top, rect.left, rect.bottom, undefined, [ids, srange], [start, end], true);
             // don't highlight style in toolbox
         } else if (ids.length == 1) {
-            tool.openMenu(top, left, bottom, contents[ids[0]].style, true);
+            tool.openMenu(rect.top, rect.left, rect.bottom, contents[ids[0]].style, [ids, srange], [start, end], true);
             // highlight style in toolbox
         }
     }
@@ -245,7 +241,93 @@ const addclick = (e) => {
             let left = rect.left;
             menu.openMenu(top, left, bottom);
             selected = true;
-            // menu.openMenu(e.clientY, e.clientX, e.clientY);
+        }
+    }
+}
+
+const applyStyles = (elements, attribute, value, srange) => {
+    for (let j = elements.length - 1; j >= 0; j--) {
+        const i = elements[j];
+        if (i >= contents.length) console.error('toolcontroller id greater than length');
+        let newNode = JSON.parse(JSON.stringify(contents[i]));
+        let id = uuidv4();        
+        newNode.id = id;
+        newNode['style'][attribute] = value;    
+        let merged = false;
+        if (i < contents.length - 1 && contents.length > 1 && srange[1] == contents[i].content.length && (j == 0 || elements.length == 1)) {
+            let style2 = contents[i + 1].style;
+            let style1 = JSON.parse(JSON.stringify(contents[i].style));
+            style1[attribute] = value;
+            if (deepEqual(style1, style2)) {
+                contents[i + 1].content = contents[i].content.substring(srange[0]) + contents[i + 1].content;
+                if (contents[i].content.length == srange[1] - srange[0]) { // entire block gets merged
+                    contents.splice(i, 1);
+                } else {
+                    contents[i].content = contents[i].content.substring(0, srange[0])
+                }
+                merged = true;
+            }
+        } 
+        if (i >= 1 && contents.length > 1 && srange[0] == 0 && (j == elements.length - 1 || elements.length == 1)) {
+            let style2 = contents[i - 1].style;
+            let style1 = JSON.parse(JSON.stringify(contents[i].style));
+            style1[attribute] = value;
+            if (deepEqual(style1, style2)) {
+                contents[i - 1].content += contents[i].content.substring(0, srange[1]);
+                if (contents[i].content.length == srange[1] - srange[0]) { // entire block gets merged
+                    contents.splice(i, 1);
+                } else {
+                    contents[i].content = contents[i].content.substring(srange[1]);
+                }
+                merged = true;
+            }
+        }
+        if (merged) return;
+
+        if (elements.length == 1) {
+            if (srange[0] == 0 && srange[1] == contents[i].content.length) { // ship entire thing
+                contents[i]['style'][attribute] = value;
+            } else if (srange[0] == 0) { // new + old
+                newNode.content = contents[i].content.substring(0, srange[1]);
+                contents[i].content = contents[i].content.substring(srange[1]);
+                contents.splice(i, 0, newNode);
+            } else if (srange[1] == contents[i].content.length) { // old + new
+                newNode.content = contents[i].content.substring(srange[0]);
+                contents[i].content = contents[i].content.substring(0, srange[0]);
+                contents.splice(i + 1, 0, newNode);
+            } else { // old + new + old
+                newNode.content = contents[i].content.substring(srange[0], srange[1]);
+
+                let oldNode = JSON.parse(JSON.stringify(contents[i]));
+                let id2 = uuidv4();        
+                oldNode.id = id2;
+                oldNode.content = contents[i].content.substring(srange[1]);
+
+                contents[i].content = contents[i].content.substring(0, srange[0]);
+                contents.splice(i + 1, 0, oldNode);
+                contents.splice(i + 1, 0, newNode);
+            }
+        } else if (j == 0) {
+            if (contents[i]['style'][attribute] == value) continue;
+            if (srange[0] == 0) { // ship entire thing
+                contents[i]['style'][attribute] = value;
+            } else { // ship start of selection -> end of node
+                newNode.content = contents[i].content.substring(srange[0]);
+                contents[i].content = contents[i].content.substring(0, srange[0]);
+                contents.splice(i + 1, 0, newNode);
+            }                
+        } else if (j == elements.length - 1) {
+            if (contents[i]['style'][attribute] == value) continue;
+            if (srange[1] == contents[i].content.length) { // ship entire thing
+                contents[i]['style'][attribute] = value;
+            } else { // start -> end of select
+                newNode.content = contents[i].content.substring(0, srange[1]);
+                contents[i].content = contents[i].content.substring(srange[1]);
+                contents.splice(i, 0, newNode);
+            }
+        } else { // this entire nde is selected, so we can just take the entire thing and just apply the style
+            if (contents[i]['style'][attribute] == value) continue;
+            contents[i]['style'][attribute] = value;
         }
     }
 }
@@ -253,83 +335,22 @@ const addclick = (e) => {
 const toolcontroller = (e) => {
     const context = e.detail.context;
     const subcontext = e.detail.subcontext;         // styles we are applying
-    const value = e.detail.value;
-    const [elements, srange] = e.detail.elements;     // elements that are being applied
-    const [start, end] = e.detail.range;            // range in the elements we are applying the styles
-    console.log(context, subcontext, elements, value, srange, [start, end]);
     if (context == 'elements') {
-        for (let i = 0; i < elements.length; i++) {
-            if (i >= contents.length) console.error('toolcontroller id greater than length');
-            // TODO: problem - deep copy
-            let newNode = {...contents[i]}
-            let id = uuidv4();        
-            newNode.id = id;
-            newNode['style'][subcontext] = value;    
-            if (elements.length == 1) {
-                console.log('hi')
-                if (srange[0] == 0 && srange[1] == contents[i].content.length) { // ship entire thing
-                    console.log('1')
-                    contents[i]['style'][subcontext] = value;
-                } else if (srange[0] == 0) { // new + old
-                    console.log('2')
-                    newNode.content = contents[i].content.substring(0, srange[1]);
-                    contents[i].content = contents[i].content.substring(srange[1]);
-                    contents.splice(i, 0, newNode);
-                } else if (srange[1] == contents[i].content.length) { // old + new
-                    console.log('3')
-                    newNode.content = contents[i].content.substring(srange[0]);
-                    contents[i].content = contents[i].content.substring(0, srange[0]);
-                    contents.splice(i + 1, 0, newNode);
-                } else { // old + new + old
-                    console.log('4')
-                    newNode.content = contents[i].content.substring(srange[0], srange[1]);
-
-                    let oldNode = {...contents[i]}
-                    let id2 = uuidv4();        
-                    oldNode.id = id2;
-                    oldNode.content = contents[i].content.substring(srange[1]);
-
-                    contents[i].content = contents[i].content.substring(0, srange[0]);
-                    contents.splice(i + 1, 0, oldNode);
-                    contents.splice(i + 1, 0, newNode);
-                }
-            } else if (i == 0) {
-                if (srange[0] == 0) { // ship entire thing
-                    contents[i]['style'][subcontext] = value;
-                } else { // ship start of selection -> end of node
-                    newNode.content = contents[i].content.substring(srange[0]);
-                    contents[i].content = contents[i].content.substring(0, srange[0]);
-                    contents.splice(i + 1, 0, newNode);
-                }                
-            } else if (i == elements.length - 1) {
-                if (srange[1] == contents[i].content.length) { // ship entire thing
-                    contents[i]['style'][subcontext] = value;
-                } else { // start -> end of select
-                    newNode.content = contents[i].content.substring(0, srange[1]);
-                    contents[i].content = contents[i].content.substring(srange[1]);
-                    contents.splice(i, 0, newNode);
-                }
-            } else { // this entire nde is selected, so we can just take the entire thing and just apply the style
-                contents[i]['style'][subcontext] = value;
-            }
-        }
-        // create node
-        // remove text + nodes from original
-        // insert node
+        const value = e.detail.value;
+        const [elements, srange] = e.detail.elements;     // elements that are being applied
+        applyStyles(elements, subcontext, value, srange);
     } else if (context == 'transform') {
-
+        console.log('hi')
     } else if (context == 'color') {
 
     }
-    // TODO: merge if same style
 }
 
 $: {
     contents;
     lengths = [];
     for (const content of contents) {
-        if (content && content.content)
-            lengths.push(content.content.length);
+        if (content && content.content) lengths.push(content.content.length);
     }
 }
 
@@ -358,7 +379,7 @@ style={`line-height: 18px;`}>
                 ${content.style.italics ? 'italic' : ''} 
                 ${content.content.trimEnd().length > 0 && content.style.code ? 'code' : ''}
                 ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
-                ${content.content.trimEnd().length > 0 && content.style.underline ? content.style.strikethrough ? 'border-b-2' : 'underline underline-offset-8' : ''} 
+                ${content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
                 whitespace-pre-wrap editableSpan text-wrap break-all`} 
         style={`
             color: ${content.style.color}; 
