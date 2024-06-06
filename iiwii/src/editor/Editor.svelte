@@ -27,17 +27,21 @@ const textEnter = (e, index, type) => {
 
     if (i == c.length - 1) {
         let [new_content] = blocks[index]['content'].splice(i, 1);
+        // @ts-ignore
         blocks.splice(index + 1, 0, new_content);
         focusElement(new_content.id);
     } else if (i == 0) {
         let [new_content] = blocks[index]['content'].splice(0, 1);
+        // @ts-ignore
         blocks.splice(index + 1, 0, new_content);
         focusElement(new_content.id);
     } else {
         let new_b = blocks[index]['content'].splice(i);
         let [new_content] = new_b.splice(0, 1);
+        // @ts-ignore
         blocks.splice(index + 1, 0, new_content);
         focusElement(new_content.id);
+        // @ts-ignore
         blocks.splice(index + 2, 0, {
             type: type,
             id: id, 
@@ -56,6 +60,7 @@ const ondelete = (e, index) => {
         let id;
         if (blocks[index - 1].type == 'unordered' || blocks[index - 1].type == 'ordered') {
             let c = blocks[index - 1].content;
+            // @ts-ignore
             c[c.length - 1].content.push(...c);
             id = c[c.length - 1].id;
         } else {
@@ -189,7 +194,7 @@ const shiftdown = (e, index) => {
             block = document.getElementById(blocks[index - 1].id.toString());
         }
         if (block) {
-            extendSelection(block, false);
+            // extendSelection(block, false);
         }
     } else {
         if (index == blocks.length - 1) return;
@@ -219,8 +224,35 @@ const makeList = (e, type, index) => {
     if (type == 'ordered' && e.detail.start) blocks[index].start = e.detail.start;
     blocks[index].type = type;
     blocks[index].id = id;
+    // @ts-ignore
     blocks[index].content = [content];
     focusElement(id2);
+}
+
+const transformElement = (e, type, index) => {
+    const from = e.detail.from; 
+    const to = e.detail.to; 
+    const i = e.detail.i;
+
+    // TODO AND to == a text form
+    if (from == 'ordered' || from == 'unordered') {
+        let id = uuidv4();
+        let new_b = blocks[index]['content'].splice(i);
+        let [new_content] = new_b.splice(0, 1);
+        new_content.type = to;
+        // @ts-ignore
+        blocks.splice(index + 1, 0, new_content);
+        focusElement(new_content.id);
+        // @ts-ignore
+        blocks.splice(index + 2, 0, {
+            type: type,
+            id: id, 
+            content: new_b
+        });
+        blocks = [...blocks]
+    }
+    // TODO: text to list
+    // TODO: list to diff list
 }
 
 </script>
@@ -228,7 +260,8 @@ const makeList = (e, type, index) => {
 <div class="px-72 pt-10" id='breh'>
 {#each blocks as item, index}
     {#if item.type == 'text' || item.type == 'h1' || item.type == 'h2' || item.type == 'h3'}
-        <Paragraph id={item.id} bind:contents={item.content} fontsize={FONTSIZE[item.type]}
+        <Paragraph id={item.id} bind:contents={item.content}
+            bind:type={item.type} on:transform={(e) => transformElement(e, index)}
             on:enter={(e) => enterPresed(e, index, 'text')}
             on:delete={(e) => ondelete(e, index)} 
             on:shift-down={(e) => shiftdown(e, index)}
@@ -239,11 +272,13 @@ const makeList = (e, type, index) => {
         <List id={item.id} bind:contents={item.content} type='ordered' start={item.start}
             on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
+            on:transform={(e) => transformElement(e, item.type, index)}
             on:text={(e) => textEnter(e, index, 'ordered')} />
     {:else if item.type == 'unordered'}
         <List id={item.id} bind:contents={item.content} type='unordered' 
             on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
+            on:transform={(e) => transformElement(e, item.type, index)}
             on:text={(e) => textEnter(e, index, 'unordered')} />
     {/if}
 {/each}

@@ -5,10 +5,12 @@ import { TOOL } from './constants';
 import ContextMenu from './ContextMenu.svelte';
 import { tooltip } from "@svelte-plugins/tooltips";
 import ColorPicker from 'svelte-awesome-color-picker';
+import Wrapper from './Wrapper.svelte';
 
 export let id;
 export let selected;
 export let textStyle = undefined;
+
 let top;
 let left;
 let bottom;
@@ -19,20 +21,22 @@ let menu;
 let turninto = false;
 let style = "";
 let firstShown = false;
-
 const dispatch = createEventDispatcher();
 
-const menuClick = (context, subcontext, value) => {
+const returnPage = () => {
     showMenu = false; 
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'auto';
     selected = false;
     let icons = document.getElementsByClassName('fa-plus');
     for (const icon of icons) {
+        // @ts-ignore
         icon.style.visibility = 'visible';
     }
+}
 
-    console.log(context, subcontext)
+const menuClick = (context, subcontext, value) => {
+    if (subcontext != 'color') returnPage();
 
     if (context == 'elements') {
         dispatch('tool', {
@@ -40,10 +44,8 @@ const menuClick = (context, subcontext, value) => {
             subcontext: subcontext,
             elements: index,
             range: range,
-            value: value == 'true'
+            value: subcontext == 'color' ? value : value == 'true'
         })
-    } else {
-
     }
 }
 
@@ -55,34 +57,27 @@ const dropdown = (e) => {
         let element = document.getElementById('navbar');
         if (element) {
             const rect = element.getBoundingClientRect();
-            let top = rect.top;
-            let bottom = rect.bottom;
-            let left = rect.left;
             let icons = document.getElementsByClassName('fa-plus');
             for (const icon of icons) {
+                // @ts-ignore
                 icon.style.visibility = 'hidden';
             }
-            menu.openMenu(bottom - top - 10, 0, bottom);
+            menu.openMenu(rect.bottom - rect.top - 10, 0, rect.bottom);
         }
         turninto = true;
     }
 }
 
 export const onPageClick = (e) => {
+    console.log('hi')
     if (firstShown) {
         firstShown = false;
         return;
     }
     e.preventDefault();
     e.stopPropagation();
-    showMenu = false;
     selected = false;
-    let body = document.getElementById('homepage');
-    if (body) body.style.overflowY = 'auto';
-    let icons = document.getElementsByClassName('fa-plus');
-    for (const icon of icons) {
-        icon.style.visibility = 'visible';
-    }
+    returnPage();
     dispatch('close')
 }
 
@@ -107,11 +102,11 @@ export const openMenu = (top_, left_, bottom_, textStyle_, index_, range_, flagF
 
 const contextController = (e) => {
     let subcontext = e.detail.subcontext;
-    console.log(subcontext)
     dispatch('tool', {
         context: 'transform',
         subcontext: subcontext
-    })
+    });
+    returnPage();
 }
 
 </script>
@@ -130,6 +125,7 @@ const contextController = (e) => {
                             class={textStyle && textStyle[i.name] ? 'in-use' : ''}
                             use:tooltip={{
                                 content: `${i.displayText}`,
+                                // @ts-ignore
                                 style: { backgroundColor: '#515151', color: '#ffffff', padding: '5px 5px 5px 5px' },
                                 position: `top`,
                                 animation: 'slide',
@@ -142,7 +138,10 @@ const contextController = (e) => {
                     <span class="pt-3">
                         <!-- TODO: -->
                         <ColorPicker
-                            --picker-z-index="9999"
+                            on:input={(e) => {
+                                menuClick('elements', 'color', e.detail.hex);
+                            }}
+                            components={{wrapper: Wrapper}}
                             label={textStyle && textStyle[item.name] ? textStyle[item.name] : '#000000'}
                             hex={textStyle && textStyle[item.name] ? textStyle[item.name] : '#000000'}
                         />
@@ -155,6 +154,9 @@ const contextController = (e) => {
                 {/if}
             {/each}
     </div>
+    <span id="colour">
+                        
+    </span>
 </div>
 {/if}
 
@@ -162,6 +164,10 @@ const contextController = (e) => {
 * {
     padding: 0;
     margin: 0;
+}
+
+#colour {
+    margin-top: 10px;
 }
 
 .navbar{

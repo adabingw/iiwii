@@ -216,7 +216,7 @@ export const MENU = [
             'class': 'fa-solid fa-3 fa-xs fa-fw'
         }, {
             'name': 'text', 
-            'displayText': 'Heading 3', 
+            'displayText': 'Text', 
             'class': 'fa-solid fa-font fa-xs fa-fw'
         }, {
             'name': 'ul', 

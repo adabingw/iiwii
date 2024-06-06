@@ -136,30 +136,45 @@ const leftright = (index, direction) => {
     // dispatch(direction);
 }
 
+const transformElement = (e, index) => {
+    dispatch('transform', {
+        from: e.detail.from,
+        to: e.detail.to,
+        i: index
+    })
+}
+
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div >
 {#if type == 'ordered'}
-<ol class='list-decimal' start={start && start != 0 ? start : 1}>
+<ol class='list-decimal list-outside' start={start && start != 0 ? start : 1}>
     {#each contents as line, index}
-        <Paragraph id={line.id} bind:contents={line.content} fontsize=16 type='list'
-                on:enter={(e) => enterPresed(e, index)}
-                on:delete={(e) => ondelete(e, index)} 
-                on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
-                on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
+        <Paragraph id={line.id} bind:contents={line.content} type='ordered'
+            on:transform={(e) => transformElement(e, index)}
+            on:enter={(e) => enterPresed(e, index)}
+            on:delete={(e) => ondelete(e, index)} 
+            on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
+            on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
     {/each}
 </ol>
 {:else}
-<ul class='list-disc'>
+<ul class='list-disc list-outside'>
     {#each contents as line, index}
-        <Paragraph id={line.id} bind:contents={line.content} fontsize=16 type='list'
-                    on:enter={(e) => enterPresed(e, index)}
-                    on:delete={(e) => ondelete(e, index)} 
-                    on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
-                    on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
+        <Paragraph id={line.id} bind:contents={line.content} type='unordered'
+            on:transform={(e) => transformElement(e, index)}
+            on:enter={(e) => enterPresed(e, index)}
+            on:delete={(e) => ondelete(e, index)} 
+            on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
+            on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
     {/each}
 </ul>
 {/if}
 </div>    
+
+<style>
+
+
+</style>

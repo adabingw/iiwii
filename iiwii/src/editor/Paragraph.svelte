@@ -1,16 +1,28 @@
 <script>
 
-import { createEventDispatcher, onMount } from 'svelte';
-import { focuspos, getActiveDiv, getOffset, getWrapped, getCurrRow, getIndexFromOffset, rgbToHex, getCoverage, getSelectionOffsets, deepEqual } from '../utils/utils';
+import { createEventDispatcher } from 'svelte';
+import { 
+    focuspos, 
+    getActiveDiv, 
+    getOffset, 
+    getWrapped, 
+    getCurrRow, 
+    getIndexFromOffset, 
+    rgbToHex, 
+    getCoverage, 
+    getSelectionOffsets, 
+    deepEqual 
+} from '../utils/utils';
 import {v4 as uuidv4} from 'uuid';
-  import ContextMenu from '../utils/ContextMenu.svelte';
-  import TextTool from '../utils/TextTool.svelte';
+import ContextMenu from '../utils/ContextMenu.svelte';
+import TextTool from '../utils/TextTool.svelte';
+import { FONTSIZE } from '../utils/constants';
 
 export let contents = [];
 export let id;
-export let fontsize;
 export let type = 'text';
 
+let fontsize = FONTSIZE[type] ? FONTSIZE[type] : 16;
 let selText = '';
 let selected = false;
 let menu;
@@ -78,6 +90,7 @@ const keydown = (e) => {
                 return;
             }
             if (el2caret == 0) {
+                // @ts-ignore
                 dispatch('delete', { index: el2.title });
                 return;
             }
@@ -132,6 +145,7 @@ const keyup = (e) => {
             const rect = element.getBoundingClientRect();
             let icons = document.getElementsByClassName('fa-plus');
             for (const icon of icons) {
+                // @ts-ignore
                 icon.style.visibility = 'hidden';
             }
             if (ids.length > 1) {
@@ -156,6 +170,7 @@ const keyup = (e) => {
             const rect = element.getBoundingClientRect();
             let icons = document.getElementsByClassName('fa-plus');
             for (const icon of icons) {
+                // @ts-ignore
                 icon.style.visibility = 'hidden';
             }
             menu.openMenu(rect.top, rect.left, rect.bottom);
@@ -205,6 +220,7 @@ const mouseup = (e, index) => {
         const rect = element.getBoundingClientRect();
         let icons = document.getElementsByClassName('fa-plus');
         for (const icon of icons) {
+            // @ts-ignore
             icon.style.visibility = 'hidden';
         }
         if (ids.length > 1) {
@@ -219,7 +235,9 @@ const mouseup = (e, index) => {
 
 const input = (e) => {
     let element = getActiveDiv();
+    // @ts-ignore
     if (element && contents[element.title]) {
+        // @ts-ignore
         if (element.textContent.trimEnd() == '') contents[element.title].content = ' ';
         else {
             // TODO: fix weird behaviour this leads to
@@ -340,9 +358,15 @@ const toolcontroller = (e) => {
         const [elements, srange] = e.detail.elements;     // elements that are being applied
         applyStyles(elements, subcontext, value, srange);
     } else if (context == 'transform') {
-        console.log('hi')
-    } else if (context == 'color') {
-
+        if (subcontext == type) return;
+        if (type != 'unordered' && type != 'ordered' && subcontext != 'unordered' && subcontext != 'ordered') {
+            type = subcontext;
+        } else {
+            dispatch('transform', {
+                from: type,
+                to: subcontext,
+            })
+        }
     }
 }
 
@@ -354,6 +378,12 @@ $: {
     }
 }
 
+$: {
+    type;
+    console.log('new type', type)
+    fontsize = FONTSIZE[type] ? FONTSIZE[type] : 16;
+}
+
 </script>
 
 <ContextMenu bind:this={menu} id={id} bind:selected={selected} selText={selText} on:empty={(e) => menu.onPageClick(e)}/>
@@ -362,18 +392,20 @@ $: {
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 
-<i class={`fa-solid fa-plus fa-ms ${selected ? 'selected' : ''}`} style={`line-height: ${parseInt(fontsize) + 8}px;`} 
-    on:click={addclick} id={`icon-${id}`}></i>
+<span id={`icon-${id}`} class={`icons ${selected ? 'selected' : ''}`} 
+    style={`line-height: ${parseInt(fontsize) + 8}px; height: ${parseInt(fontsize) + 8}px;`}>
+    <i class={`fa-solid fa-plus fa-ms `}  on:click={addclick} ></i>
+    <i class={`fa-solid fa-ellipsis-vertical fa-ms`}  on:click={addclick} ></i>
+</span>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-{#if type == 'text'}
+{#if type != 'ordered' && type != 'unordered'}
 <div on:mousedown={focuslast} class='hover:cursor-text  cursor-text whitespace-pre-wrap text-wrap break-all'>
-<span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
+<span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all block' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)}
 style={`line-height: 18px;`}>
     {#each contents as content, index}
-    
     <span 
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
@@ -385,16 +417,18 @@ style={`line-height: 18px;`}>
             color: ${content.style.color}; 
             font-size: ${fontsize}px; 
             line-height: ${parseInt(fontsize) + 8}px;
-            border-color: ${content.style.color}
+            border-color: ${content.style.color};
+            -webkit-box-decoration-break: clone;
+            box-decoration-break: clone;
         `} 
         title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span>
     {/each}
 </span>
 </div>
-{:else if type == 'list'}
+{:else}
 <li class='hover:cursor-text  cursor-text'>
-<span on:mousedown={focuslast} class='whitespace-pre-wrap text-wrap break-all'>
-<span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all' contenteditable="true" spellcheck="false" 
+<span on:mousedown={focuslast} class='whitespace-pre-wrap text-wrap break-all box-border'>
+<span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all box-border' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:input={(e) => input(e)} on:keyup={keyup} on:mouseup={(e) => mouseup(e)}
 style={`line-height: 18px;`}>
     {#each contents as content, index}
@@ -404,12 +438,14 @@ style={`line-height: 18px;`}>
                 ${content.content.trimEnd().length > 0 && content.style.code ? 'code' : ''}
                 ${content.style.underline ? content.style.strikethrough ? 'border-b-2' : 'underline underline-offset-12' : ''}  
                 ${content.style.strikethrough ? 'line-through' : ''}
-                whitespace-pre-wrap editableSpan text-wrap break-all`} 
+                whitespace-pre-wrap editableSpan text-wrap break-all overflow-hidden`} 
         style={`
             color: ${content.style.color}; 
             font-size: ${fontsize}px; 
             line-height: ${parseInt(fontsize) + 8}px;
-            border-color: ${content.style.color}
+            border-color: ${content.style.color};
+            -webkit-box-decoration-break: clone;
+            box-decoration-break: clone;
         `}  
         title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span>
     {/each}
@@ -420,11 +456,18 @@ style={`line-height: 18px;`}>
 </div>
 
 <style>
-i {
+.icons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     margin-left: -15px;
     margin-right: 10px;
     color: #b1b1b1 !important;
     opacity: 0;
+}
+
+i {
+    margin-right: 12px;
 }
 
 .selected {
@@ -433,14 +476,21 @@ i {
 
 .code {
     background-color: #dedede;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
     padding-bottom: 3px;
     border-radius: 5px;
 }
 
-i:hover {
+.icons:hover {
     cursor: pointer;
     opacity: 1;
 }
+
+li {
+    list-style-position: outside !important;
+}
+
 </style>
