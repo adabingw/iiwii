@@ -26,11 +26,19 @@ const textEnter = (e, index, type) => {
     let id = uuidv4();
 
     if (i == c.length - 1) {
+        console.log('a')
         let [new_content] = blocks[index]['content'].splice(i, 1);
-        // @ts-ignore
-        blocks.splice(index + 1, 0, new_content);
+        console.log(new_content)
+        if (blocks[index]['content'].length != 0) {
+            // @ts-ignore
+            blocks.splice(index + 1, 0, new_content);   
+        } else {
+            // @ts-ignore
+            blocks.splice(index, 0, new_content);   
+        }
         focusElement(new_content.id);
     } else if (i == 0) {
+        console.log('b')
         let [new_content] = blocks[index]['content'].splice(0, 1);
         // @ts-ignore
         blocks.splice(index + 1, 0, new_content);
@@ -49,6 +57,7 @@ const textEnter = (e, index, type) => {
         });
     }
     blocks = [...blocks]
+    console.log(blocks)
 }
 
 const ondelete = (e, index) => {
@@ -80,6 +89,7 @@ const ondelete = (e, index) => {
         } else if (blocks[index].content.length == 1 && blocks.length > 1) {
             blocks.splice(index, 1);
             let id;
+            console.log(blocks[index - 1])
             if (blocks[index - 1].type == 'unordered' || blocks[index - 1].type == 'ordered') {
                 let c = blocks[index - 1].content;
                 id = c[c.length - 1].id;
@@ -234,25 +244,44 @@ const transformElement = (e, type, index) => {
     const to = e.detail.to; 
     const i = e.detail.i;
 
-    // TODO AND to == a text form
     if (from == 'ordered' || from == 'unordered') {
         let id = uuidv4();
         let new_b = blocks[index]['content'].splice(i);
         let [new_content] = new_b.splice(0, 1);
+        console.log(new_content)
         new_content.type = to;
-        // @ts-ignore
-        blocks.splice(index + 1, 0, new_content);
-        focusElement(new_content.id);
+        if (to == 'h1' || to == 'h2' || to == 'h3' || to == 'text') {
+            // @ts-ignore
+            blocks.splice(index + 1, 0, new_content);
+            focusElement(new_content.id);   
+        } else {
+            console.log('???')
+            // @ts-ignore
+            blocks.splice(index + 1, 0, {
+                type: to,
+                id: id, 
+                // @ts-ignore
+                content: [new_content]
+            });
+        }
         // @ts-ignore
         blocks.splice(index + 2, 0, {
             type: type,
             id: id, 
             content: new_b
         });
-        blocks = [...blocks]
+        console.log(blocks)
+    } else {
+        let id = uuidv4();
+        let new_content = JSON.parse(JSON.stringify(blocks[index]));
+        new_content.type = 'text';
+        blocks[index] = {
+            type: to, 
+            id: id,
+            content: [new_content]
+        }
     }
-    // TODO: text to list
-    // TODO: list to diff list
+    blocks = [...blocks]
 }
 
 </script>
@@ -261,7 +290,7 @@ const transformElement = (e, type, index) => {
 {#each blocks as item, index}
     {#if item.type == 'text' || item.type == 'h1' || item.type == 'h2' || item.type == 'h3'}
         <Paragraph id={item.id} bind:contents={item.content}
-            bind:type={item.type} on:transform={(e) => transformElement(e, index)}
+            bind:type={item.type} on:transform={(e) => transformElement(e, item.type, index)}
             on:enter={(e) => enterPresed(e, index, 'text')}
             on:delete={(e) => ondelete(e, index)} 
             on:shift-down={(e) => shiftdown(e, index)}

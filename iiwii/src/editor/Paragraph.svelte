@@ -380,7 +380,6 @@ $: {
 
 $: {
     type;
-    console.log('new type', type)
     fontsize = FONTSIZE[type] ? FONTSIZE[type] : 16;
 }
 
@@ -432,12 +431,11 @@ style={`line-height: 18px;`}>
 on:keydown={keydown} on:input={(e) => input(e)} on:keyup={keyup} on:mouseup={(e) => mouseup(e)}
 style={`line-height: 18px;`}>
     {#each contents as content, index}
-    <span 
+    <span class={`${content.content.trimEnd().length > 0 && content.style.code ? 'code' : ''}`}><span 
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
-                ${content.content.trimEnd().length > 0 && content.style.code ? 'code' : ''}
-                ${content.style.underline ? content.style.strikethrough ? 'border-b-2' : 'underline underline-offset-12' : ''}  
-                ${content.style.strikethrough ? 'line-through' : ''}
+                ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
+                ${content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
                 whitespace-pre-wrap editableSpan text-wrap break-all overflow-hidden`} 
         style={`
             color: ${content.style.color}; 
@@ -447,7 +445,7 @@ style={`line-height: 18px;`}>
             -webkit-box-decoration-break: clone;
             box-decoration-break: clone;
         `}  
-        title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span>
+        title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span></span>
     {/each}
 </span>
 </span>

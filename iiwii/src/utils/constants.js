@@ -219,11 +219,11 @@ export const MENU = [
             'displayText': 'Text', 
             'class': 'fa-solid fa-font fa-xs fa-fw'
         }, {
-            'name': 'ul', 
+            'name': 'unordered', 
             'displayText': 'Bullet list', 
             'class': 'fa-solid fa-list-ul fa-xs fa-fw'
         }, {
-            'name': 'ol', 
+            'name': 'ordered', 
             'displayText': 'Number list', 
             'class': 'fa-solid fa-list-ol fa-xs fa-fw'
         }
