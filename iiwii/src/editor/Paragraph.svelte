@@ -34,10 +34,33 @@ let shift = false;
 let ctrl = false;
 
 const keydown = (e) => {            
+    // if (selected || toolSelected) {
+    //     e.stopPropagation();
+    //     e.preventDefault();
+    // }
     let element = document.getElementById(id);
-    let wrap = getWrapped(element, fontsize)
+    let wrap = getWrapped(element, fontsize);
     if (element) {
         let caret = getOffset(element);
+
+        if (ctrl) {
+            let { start, end } = getSelectionOffsets(element);
+            let [ids, srange] = getCoverage(start, end, contents);
+            if (e.key == 'b') {
+                applyStyles(ids, 'bold', ids.length > 1 ? true : !contents[ids[0]].style.bold, srange);
+            } else if (e.key == 'S') {
+                if (shift) {
+                    applyStyles(ids, 'strikethrough', ids.length > 1 ? true : !contents[ids[0]].style.strikethrough, srange);
+                }
+            } else if (e.key == 'i') {
+                applyStyles(ids, 'italics', ids.length > 1 ? true : !contents[ids[0]].style.italics, srange);
+            } else if (e.key == 'm') {
+                applyStyles(ids, 'code', ids.length > 1 ? true : !contents[ids[0]].style.code, srange);
+            } else if (e.key == 'u') {
+                applyStyles(ids, 'underline', ids.length > 1 ? true : !contents[ids[0]].style.underline, srange);
+            }
+        }
+
         if (e.key == 'Shift') {
             shift = true;
         } else if (e.key == 'Control') {
@@ -150,9 +173,11 @@ const keyup = (e) => {
             }
             if (ids.length > 1) {
                 tool.openMenu(rect.top, rect.left, rect.bottom, undefined, [ids, srange], [start, end]);
+                toolSelected = true;
                 // don't highlight style in toolbox
             } else if (ids.length == 1) {
                 tool.openMenu(rect.top, rect.left, rect.bottom, contents[ids[0]].style, [ids, srange], [start, end]);
+                toolSelected = true;
                 // highlight style in toolbox
             }
         } else {
@@ -174,6 +199,7 @@ const keyup = (e) => {
                 icon.style.visibility = 'hidden';
             }
             menu.openMenu(rect.top, rect.left, rect.bottom);
+            selected = true;
         }
     } else if (e.key == ' ') {
         if (element && element.textContent.trimEnd() == '*') {
@@ -225,9 +251,11 @@ const mouseup = (e, index) => {
         }
         if (ids.length > 1) {
             tool.openMenu(rect.top, rect.left, rect.bottom, undefined, [ids, srange], [start, end], true);
+            toolSelected = true;
             // don't highlight style in toolbox
         } else if (ids.length == 1) {
             tool.openMenu(rect.top, rect.left, rect.bottom, contents[ids[0]].style, [ids, srange], [start, end], true);
+            toolSelected = true;
             // highlight style in toolbox
         }
     }
@@ -370,6 +398,23 @@ const toolcontroller = (e) => {
     }
 }
 
+const codeStyle = (index) => {
+    if (contents.length == 1) return 'code';
+    if (index == 0 && contents.length > 1) {
+        return contents[index + 1].style.code ? 'code-left' : 'code'
+    } else if (index == contents.length - 1) {
+        return contents[index - 1].style.code ? 'code-right' : 'code'
+    } else if (index > 0 && index < contents.length - 1) {
+        if (contents[index - 1].style.code && contents[index + 1].style.code) {
+            return 'code-mid'
+        } else if (contents[index - 1].style.code && !contents[index + 1].style.code) {
+            return 'code-left'
+        } else if (!contents[index - 1].style.code && contents[index + 1].style.code) {
+            return 'code-right'
+        }
+    }
+}
+
 $: {
     contents;
     lengths = [];
@@ -400,8 +445,8 @@ $: {
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 {#if type != 'ordered' && type != 'unordered'}
-<div on:mousedown={focuslast} class='hover:cursor-text  cursor-text whitespace-pre-wrap text-wrap break-all'>
-<span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all block' contenteditable="true" spellcheck="false" 
+<div on:mousedown={focuslast} class='hover:cursor-text  cursor-text text-wrap break-all'>
+<span id={id} class='hover:cursor-text cursor-text text-wrap break-all block' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)}
 style={`line-height: 18px;`}>
     {#each contents as content, index}
@@ -411,10 +456,10 @@ style={`line-height: 18px;`}>
                 ${content.content.trimEnd().length > 0 && content.style.code ? 'code' : ''}
                 ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
                 ${content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
-                whitespace-pre-wrap editableSpan text-wrap break-all`} 
+                editableSpan text-wrap break-all`} 
         style={`
             color: ${content.style.color}; 
-            font-size: ${fontsize}px; 
+            font-size: ${content.content.trimEnd().length > 0 && content.style.code ? fontsize - 2 : fontsize}px; 
             line-height: ${parseInt(fontsize) + 8}px;
             border-color: ${content.style.color};
             -webkit-box-decoration-break: clone;
@@ -426,27 +471,26 @@ style={`line-height: 18px;`}>
 </div>
 {:else}
 <li class='hover:cursor-text  cursor-text'>
-<span on:mousedown={focuslast} class='whitespace-pre-wrap text-wrap break-all box-border'>
-<span id={id} class='hover:cursor-text cursor-text whitespace-pre-wrap text-wrap break-all box-border' contenteditable="true" spellcheck="false" 
+<span on:mousedown={focuslast} class='text-wrap break-all box-border'>
+<span id={id} class='hover:cursor-text cursor-text text-wrap break-all box-border' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:input={(e) => input(e)} on:keyup={keyup} on:mouseup={(e) => mouseup(e)}
-style={`line-height: 18px;`}>
-    {#each contents as content, index}
-    <span class={`${content.content.trimEnd().length > 0 && content.style.code ? 'code' : ''}`}><span 
+style={`line-height: 18px; box-decoration-break: clone;`}>
+    {#each contents as content, index}<span 
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
+                ${content.content.trimEnd().length > 0 && content.style.code ? codeStyle(index) : ''}
                 ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
                 ${content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
-                whitespace-pre-wrap editableSpan text-wrap break-all overflow-hidden`} 
+                editableSpan text-wrap break-all overflow-hidden`} 
         style={`
             color: ${content.style.color}; 
-            font-size: ${fontsize}px; 
+            font-size: ${content.content.trimEnd().length > 0 && content.style.code ? fontsize - 2 : fontsize}px; 
             line-height: ${parseInt(fontsize) + 8}px;
             border-color: ${content.style.color};
             -webkit-box-decoration-break: clone;
             box-decoration-break: clone;
         `}  
-        title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span></span>
-    {/each}
+        title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span>{/each}
 </span>
 </span>
 </li>
@@ -474,12 +518,33 @@ i {
 
 .code {
     background-color: #dedede;
-    padding-left: 0.3em;
-    padding-right: 0.3em;
     padding-top: 0.1em;
     padding-bottom: 0.1em;
-    padding-bottom: 3px;
+    padding-right: 0.3em;
+    padding-left: 0.3em;
     border-radius: 5px;
+}
+
+.code-left {
+    background-color: #dedede;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+    padding-left: 0.3em;
+    border-radius: 5px 0px 0px 5px;
+}
+
+.code-right {
+    background-color: #dedede;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
+    padding-right: 0.3em;
+    border-radius: 0px 5px 5px 0px;
+}
+
+.code-mid {
+    background-color: #dedede;
+    padding-top: 0.1em;
+    padding-bottom: 0.1em;
 }
 
 .icons:hover {

@@ -124,7 +124,7 @@ const contextController = (e) => {
                         <span on:click={() => menuClick(item.name, i.name, textStyle && textStyle[i.name] ? !textStyle[i.name] : 'true')}
                             class={textStyle && textStyle[i.name] ? 'in-use' : ''}
                             use:tooltip={{
-                                content: `${i.displayText}`,
+                                content: `${i.displayText} (${i.shortcut})`,
                                 // @ts-ignore
                                 style: { backgroundColor: '#515151', color: '#ffffff', padding: '5px 5px 5px 5px' },
                                 position: `top`,

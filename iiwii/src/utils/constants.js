@@ -247,23 +247,28 @@ export const TOOL = [
         'displayText': "Elements",
         'class': 'fa-solid fa-trash-can fa-xs fa-fw',
         'items': [{
-            'name': 'bold', 
+            'name': 'bold',
+            'shortcut': 'Ctrl + b',
             'displayText': 'Bold', 
             'class': 'fa-solid fa-bold fa-xs fa-fw', 
         }, {
             'name': 'italics', 
+            'shortcut': 'Ctrl + i',
             'displayText': 'Italics', 
             'class': 'fa-solid fa-italic fa-xs fa-fw'
         }, {
             'name': 'underline', 
+            'shortcut': 'Ctrl + u',
             'displayText': 'Underline', 
             'class': 'fa-solid fa-underline fa-xs fa-fw'
         }, {
             'name': 'strikethrough', 
+            'shortcut': 'Ctrl + Shift + s',
             'displayText': 'Strikethrough', 
             'class': 'fa-solid fa-strikethrough fa-xs fa-fw'
         }, {
             'name': 'code', 
+            'shortcut': 'Ctrl + m',
             'displayText': 'Code', 
             'class': 'fa-solid fa-code fa-xs fa-fw'
         }

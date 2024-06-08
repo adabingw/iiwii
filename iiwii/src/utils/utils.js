@@ -179,7 +179,7 @@ export const getWrapped = (element, fontSize) => {
     // Iterate over the child nodes of the element
     for (let j = 0; j < element.childNodes.length; j++) {
         let node = element.childNodes[j];
-        if (node.nodeType === Node.TEXT_NODE || node.nodeName.toLowerCase() === 'span') {
+        if (node.nodeName.toLowerCase() === 'span') {
             let text = node.textContent;
             const computedStyle = window.getComputedStyle(node);
             const fontWeight = computedStyle.getPropertyValue('font-weight');
