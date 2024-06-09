@@ -226,43 +226,18 @@ export const getActiveDiv = () => {
     return activeDiv;
 }
 
-export const rgbToHex = (rgbString) => {
-    const matches = rgbString.match(/\d+/g);
-    if (!matches || matches.length !== 3) {
-        return null;
+export const getActiveSpan = (div) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return null;
+    let node = selection.focusNode;
+    while (node && node !== div) {
+        // @ts-ignore
+        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'SPAN') {
+            return node;
+        }
+        node = node.parentNode;
     }
-
-    // Convert the extracted values to integers
-    const r = parseInt(matches[0]);
-    const g = parseInt(matches[1]);
-    const b = parseInt(matches[2]);
-
-    const hexR = r.toString(16).padStart(2, '0');
-    const hexG = g.toString(16).padStart(2, '0');
-    const hexB = b.toString(16).padStart(2, '0');
-
-    // Concatenate the hexadecimal components
-    const hexColor = `#${hexR}${hexG}${hexB}`;
-
-    return hexColor.toUpperCase(); // Convert to uppercase for consistency
-}
-
-export const invertColor = (hexString) => {
-
-    hexString = hexString.replace(/^#/, '');
-
-    // Parse the r, g, b values
-    let r = parseInt(hexString.slice(0, 2), 16);
-    let g = parseInt(hexString.slice(2, 4), 16);
-    let b = parseInt(hexString.slice(4, 6), 16);
-
-    // Invert each color component
-    r = (255 - r).toString(16).padStart(2, '0');
-    g = (255 - g).toString(16).padStart(2, '0');
-    b = (255 - b).toString(16).padStart(2, '0');
-
-    // Return the inverted color
-    return `#${r}${g}${b}`;
+    return null;
 }
 
 export const deepEqual = (obj1, obj2) => {

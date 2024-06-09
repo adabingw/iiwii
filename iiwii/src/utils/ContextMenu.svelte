@@ -1,11 +1,11 @@
 <script>
 import { createEventDispatcher } from 'svelte';
 import { clickOutside } from './utils.js';
-import { MENU } from './constants';
 
 export let id;
 export let selected = false;
 export let selText = '';
+export let menu = [];
 let top;
 let left;
 let bottom;
@@ -61,7 +61,7 @@ export const openMenu = (top_, left_, bottom_) => {
 $: {
     selText;
     let filtered = []
-    for (const item of MENU) {
+    for (const item of menu) {
         for (const i of item.items) {
             if (i.displayText.toLowerCase().includes(selText)) {
                 filtered.push(i.displayText);
@@ -82,7 +82,7 @@ $: {
 <div style={style} class:show={showMenu} use:clickOutside on:click_outside={onPageClick}>
     <div class={`navbar`} id="navbar">
         <ul>
-            {#each MENU as item, index}
+            {#each menu as item, index}
                 {#if item.items}
                 {#each item.items as i}
                 {#if i.displayText.toLowerCase().includes(selText.toLowerCase())}

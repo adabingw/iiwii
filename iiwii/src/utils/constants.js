@@ -231,6 +231,24 @@ export const MENU = [
     }, 
 ]
 
+export const ACTIONS = [
+    {
+        'name': 'actions',
+        'displayText': "Actions",
+        'class': 'fa-solid fa-trash-can fa-ms fa-fw',
+        'items': [{
+            'name': 'duplicate', 
+            'displayText': 'Duplicate', 
+            'class': 'fa-regular fa-copy fa-ms fa-fw', 
+        }, {
+            'name': 'delete', 
+            'displayText': 'Delete', 
+            'class': 'fa-regular fa-trash-can fa-ms fa-fw'
+        }
+        ]
+    }, 
+]
+
 export const TOOL = [
     {
         'name': 'transform',

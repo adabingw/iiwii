@@ -6,6 +6,8 @@ import ContextMenu from './ContextMenu.svelte';
 import { tooltip } from "@svelte-plugins/tooltips";
 import ColorPicker from 'svelte-awesome-color-picker';
 import Wrapper from './Wrapper.svelte';
+import { dark } from './store.js';
+  import { adjustBrightnessToDark, adjustBrightnessToLight } from './colors.js';
 
 export let id;
 export let selected;
@@ -21,6 +23,8 @@ let menu;
 let turninto = false;
 let style = "";
 let firstShown = false;
+let darkMode = false;
+const subscribe = dark.subscribe((value) => darkMode = value)
 const dispatch = createEventDispatcher();
 
 const returnPage = () => {
@@ -38,6 +42,12 @@ const returnPage = () => {
 const menuClick = (context, subcontext, value) => {
     if (subcontext != 'color') returnPage();
 
+    if (subcontext == 'color') {
+        if (value == (textStyle && textStyle.color ? textStyle.color : '#000000')) {
+            return;
+        }
+    }
+
     if (context == 'elements') {
         dispatch('tool', {
             context: context,
@@ -46,6 +56,7 @@ const menuClick = (context, subcontext, value) => {
             range: range,
             value: subcontext == 'color' ? value : value == 'true'
         })
+        onPageClick();
     }
 }
 
@@ -69,13 +80,12 @@ const dropdown = (e) => {
 }
 
 export const onPageClick = (e) => {
-    console.log('hi')
     if (firstShown) {
         firstShown = false;
         return;
     }
-    e.preventDefault();
-    e.stopPropagation();
+    // e.preventDefault();
+    // e.stopPropagation();
     selected = false;
     returnPage();
     dispatch('close')
@@ -117,7 +127,7 @@ const contextController = (e) => {
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div style={style} class:show={showMenu} use:clickOutside on:click_outside={onPageClick}>
     <ContextMenu bind:this={menu} id={id} on:context={(e) => contextController(e)}/>
-    <div class={`navbar`} id="navbar">
+    <div class={`navbar navbar-${darkMode ? 'dark' : 'light'} overflow-hidden`} id="navbar">
             {#each TOOL as item, index}
                 {#if item.items}
                     {#each item.items as i}
@@ -135,15 +145,14 @@ const contextController = (e) => {
                         </span>
                     {/each}
                 {:else if item.name == 'color'}
-                    <span class="pt-3">
-                        <!-- TODO: -->
+                    <span class={`pt-3 overflow-hidden`}>
                         <ColorPicker
                             on:input={(e) => {
                                 menuClick('elements', 'color', e.detail.hex);
                             }}
                             components={{wrapper: Wrapper}}
-                            label={textStyle && textStyle[item.name] ? textStyle[item.name] : '#000000'}
-                            hex={textStyle && textStyle[item.name] ? textStyle[item.name] : '#000000'}
+                            label={textStyle && textStyle[item.name] ? darkMode ? adjustBrightnessToDark(textStyle[item.name]) : textStyle[item.name] : darkMode ? '#ffffff' : '#000000'}
+                            hex={textStyle && textStyle[item.name] ? darkMode ? adjustBrightnessToDark(textStyle[item.name]) : textStyle[item.name] : darkMode ? '#ffffff' : '#000000'}
                         />
                     </span>
                 {:else}
@@ -154,7 +163,7 @@ const contextController = (e) => {
                 {/if}
             {/each}
     </div>
-    <span id="colour">
+    <span id="colour" class={`${darkMode ? 'dark' : 'light'}`}>
                         
     </span>
 </div>
@@ -166,16 +175,35 @@ const contextController = (e) => {
     margin: 0;
 }
 
+.navbar-dark {
+    background-color: #333;
+    overflow: hidden;
+    color: #fff;
+    border: 1px #616161 solid;
+    border-radius: 5px;
+    --cp-bg-color: #333;
+    --cp-border-color: #333;
+    --cp-text-color: white;
+    --cp-input-color: #555;
+    --cp-button-hover-color: #333;
+}
+
+.navbar-light {
+    border: 1px #c9c9c9 solid;
+    overflow: hidden;
+    background-color: #fff;
+    border-radius: 5px;
+    color: #000;
+}
+
 #colour {
     margin-top: 10px;
 }
 
-.navbar{
+.navbar {
     display: inline-flex;
-    border: 1px #999 solid;
     width: fit-content;
-    background-color: #fff;
-    border-radius: 5px;
+    height: 50px;
     overflow: hidden;
     flex-direction: row;
     padding-left: 8px;
@@ -191,15 +219,27 @@ const contextController = (e) => {
     justify-content: center;
 }
 
-.navbar span:hover {
+.navbar-light span:hover {
     cursor: pointer;
     background-color: #e9e9e9;
     border-radius: 3px;
 }
 
-.in-use {
+.navbar-dark span:hover {
+    cursor: pointer;
+    background-color: #616161;
+    border-radius: 3px;
+}
+
+.navbar-light .in-use {
     cursor: pointer;
     background-color: #e9e9e9;
+    border-radius: 3px;
+}
+
+.navbar-dark .in-use {
+    cursor: pointer;
+    background-color: #616161;
     border-radius: 3px;
 }
 

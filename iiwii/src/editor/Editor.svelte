@@ -1,5 +1,5 @@
 <script>
-import { FONTSIZE, setup } from "../utils/constants";
+import { setup } from "../utils/constants";
 import {v4 as uuidv4} from 'uuid';
 import Paragraph from "./Paragraph.svelte";
 import { focusElement, focusEnd, focuspos, getOffset, getOffsetFromIndex, getWrapped } from "../utils/utils";
@@ -19,6 +19,42 @@ const enterPresed = (e, index, type) => {
     focusElement(id);
 }
 
+const addElement = (e, index) => {
+    const type = e.detail.type;
+    let id = uuidv4();
+    let id2 = uuidv4();
+    blocks.splice(index + 1, 0, {
+        type: type,
+        id: id, 
+        content: [
+            {
+                content: ' ',
+                id: id2,
+                style: {
+                    'bold': false, 
+                    'italics': false,
+                    'underline': false,
+                    'code': false,
+                    'strikethrough': false,
+                    'color': '#000000'
+                }
+            },
+        ]
+    })
+    blocks = [...blocks]
+}
+
+const actionController = (e, index) => {
+    const action = e.detail.action;
+    if (action == 'duplicate') {
+        const new_content = JSON.parse(JSON.stringify(blocks[index]));
+        blocks.splice(index + 1, 0, new_content);
+    } else if (action == 'delete') {
+        blocks.splice(index, 1)
+    }
+    blocks = [...blocks]
+}
+
 // list -> text when enter / delete on empty entry
 const textEnter = (e, index, type) => {
     let i = e.detail.index;
@@ -26,9 +62,7 @@ const textEnter = (e, index, type) => {
     let id = uuidv4();
 
     if (i == c.length - 1) {
-        console.log('a')
         let [new_content] = blocks[index]['content'].splice(i, 1);
-        console.log(new_content)
         if (blocks[index]['content'].length != 0) {
             // @ts-ignore
             blocks.splice(index + 1, 0, new_content);   
@@ -38,7 +72,6 @@ const textEnter = (e, index, type) => {
         }
         focusElement(new_content.id);
     } else if (i == 0) {
-        console.log('b')
         let [new_content] = blocks[index]['content'].splice(0, 1);
         // @ts-ignore
         blocks.splice(index + 1, 0, new_content);
@@ -57,7 +90,6 @@ const textEnter = (e, index, type) => {
         });
     }
     blocks = [...blocks]
-    console.log(blocks)
 }
 
 const ondelete = (e, index) => {
@@ -89,7 +121,6 @@ const ondelete = (e, index) => {
         } else if (blocks[index].content.length == 1 && blocks.length > 1) {
             blocks.splice(index, 1);
             let id;
-            console.log(blocks[index - 1])
             if (blocks[index - 1].type == 'unordered' || blocks[index - 1].type == 'ordered') {
                 let c = blocks[index - 1].content;
                 id = c[c.length - 1].id;
@@ -248,14 +279,12 @@ const transformElement = (e, type, index) => {
         let id = uuidv4();
         let new_b = blocks[index]['content'].splice(i);
         let [new_content] = new_b.splice(0, 1);
-        console.log(new_content)
         new_content.type = to;
         if (to == 'h1' || to == 'h2' || to == 'h3' || to == 'text') {
             // @ts-ignore
             blocks.splice(index + 1, 0, new_content);
             focusElement(new_content.id);   
         } else {
-            console.log('???')
             // @ts-ignore
             blocks.splice(index + 1, 0, {
                 type: to,
@@ -270,7 +299,6 @@ const transformElement = (e, type, index) => {
             id: id, 
             content: new_b
         });
-        console.log(blocks)
     } else {
         let id = uuidv4();
         let new_content = JSON.parse(JSON.stringify(blocks[index]));
@@ -296,6 +324,7 @@ const transformElement = (e, type, index) => {
             on:shift-down={(e) => shiftdown(e, index)}
             on:ordered={(e) => makeList(e, 'ordered', index)} on:unordered={(e) => makeList(e, 'unordered', index)} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
+            on:action={(e) => actionController(e, index)} on:add={(e) => addElement(e, index)}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')} />
     {:else if item.type == 'ordered'}
         <List id={item.id} bind:contents={item.content} type='ordered' start={item.start}

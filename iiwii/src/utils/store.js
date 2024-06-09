@@ -1,2 +1,2 @@
 import { writable } from 'svelte/store';
-export const shift = writable(false);
+export const dark = writable(false);
