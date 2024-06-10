@@ -144,6 +144,17 @@ const transformElement = (e, index) => {
     })
 }
 
+const actionController = (e, index) => {
+    const action = e.detail.action;
+    if (action == 'duplicate') {
+        const new_content = JSON.parse(JSON.stringify(contents[index]));
+        contents.splice(index + 1, 0, new_content);
+    } else if (action == 'delete') {
+        contents.splice(index, 1)
+    }
+    contents = [...contents]
+}
+
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -155,6 +166,7 @@ const transformElement = (e, index) => {
         <Paragraph id={line.id} bind:contents={line.content} type='ordered'
             on:transform={(e) => transformElement(e, index)}
             on:enter={(e) => enterPresed(e, index)}
+            on:action={(e) => actionController(e, index)} 
             on:delete={(e) => ondelete(e, index)} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
@@ -166,6 +178,7 @@ const transformElement = (e, index) => {
         <Paragraph id={line.id} bind:contents={line.content} type='unordered'
             on:transform={(e) => transformElement(e, index)}
             on:enter={(e) => enterPresed(e, index)}
+            on:action={(e) => actionController(e, index)} 
             on:delete={(e) => ondelete(e, index)} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>

@@ -1,10 +1,22 @@
 <script>
+  import { onMount } from "svelte";
 import Editor from "./editor/Editor.svelte";
 import Header from "./header/Header.svelte";
 import { dark } from "./utils/store";
 
 let darkMode = false;
 const subscribe = dark.subscribe((value) => darkMode = value);
+
+onMount(() => {
+    let dark_ = localStorage.getItem('iiwii-theme');
+    console.log(dark_)
+    if (dark_ != null && dark_ != undefined) {
+        dark.set(dark_ == "true")
+    } else {
+        localStorage.setItem('iiwii-theme', "false");
+    }
+})
+
 </script>
 
 <div>
@@ -16,18 +28,6 @@ const subscribe = dark.subscribe((value) => darkMode = value);
 </div>
 
 <div class={`main-${darkMode ? 'dark' : 'light'} h-full`}>
-    <!-- <p style={`color: ${adjustBrightnessToLight('#086630')}`}>
-        {adjustBrightnessToLight('#086630')}
-    </p>
-    <p style={`color: ${'#086630'}`}>
-        {'#086630'}
-    </p>
-    <p style={`color: ${adjustBrightnessToDark('#a1cfb4')}`}>
-        {adjustBrightnessToDark('#a1cfb4')}
-    </p>
-    <p style={`color: ${'#a1cfb4'}`}>
-        {'#a1cfb4'}
-    </p> -->
     <div>
         <Header />
         <Editor />

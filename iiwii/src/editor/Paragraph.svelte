@@ -194,7 +194,7 @@ const keyup = (e) => {
             let { start, end } = getSelectionOffsets(element);
             let [ids, srange] = getCoverage(start, end, contents);
             const rect = element.getBoundingClientRect();
-            let icons = document.getElementsByClassName('fa-plus');
+            let icons = document.getElementsByClassName('icons');
             for (const icon of icons) {
                 // @ts-ignore
                 icon.style.visibility = 'hidden';
@@ -221,7 +221,7 @@ const keyup = (e) => {
             e.preventDefault();
             e.stopPropagation(); 
             const rect = element.getBoundingClientRect();
-            let icons = document.getElementsByClassName('fa-plus');
+            let icons = document.getElementsByClassName('icons');
             for (const icon of icons) {
                 // @ts-ignore
                 icon.style.visibility = 'hidden';

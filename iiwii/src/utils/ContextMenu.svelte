@@ -1,6 +1,7 @@
 <script>
 import { createEventDispatcher } from 'svelte';
 import { clickOutside } from './utils.js';
+import { dark } from './store.js';
 
 export let id;
 export let selected = false;
@@ -11,7 +12,9 @@ let left;
 let bottom;
 let showMenu = false;
 let style = "";
+let darkMode = false;
 
+const subscribe = dark.subscribe((value) => darkMode = value);
 const dispatch = createEventDispatcher();
 
 const menuClick = (context, subcontext) => {
@@ -19,8 +22,9 @@ const menuClick = (context, subcontext) => {
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'auto';
     selected = false;
-    let icons = document.getElementsByClassName('fa-plus');
+    let icons = document.getElementsByClassName('icons');
     for (const icon of icons) {
+        // @ts-ignore
         icon.style.visibility = 'visible';
     }
     dispatch('context', {
@@ -36,8 +40,9 @@ export const onPageClick = (e) => {
     selected = false;
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'auto';
-    let icons = document.getElementsByClassName('fa-plus');
+    let icons = document.getElementsByClassName('icons');
     for (const icon of icons) {
+        // @ts-ignore
         icon.style.visibility = 'visible';
     }
     dispatch('close')
@@ -80,7 +85,7 @@ $: {
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->  
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div style={style} class:show={showMenu} use:clickOutside on:click_outside={onPageClick}>
-    <div class={`navbar`} id="navbar">
+    <div class={`navbar navbar-${darkMode ? 'dark' : 'light'}`} id="navbar">
         <ul>
             {#each menu as item, index}
                 {#if item.items}
@@ -105,14 +110,22 @@ $: {
     margin: 0;
 }
 
-.navbar{
+.navbar {
     display: inline-flex;
-    border: 1px #999 solid;
     width: fit-content;
-    background-color: #fff;
     border-radius: 5px;
     overflow: hidden;
     flex-direction: column;
+}
+
+.navbar-dark {
+    border: 1px #616161 solid;
+    background-color: #333;
+}
+
+.navbar-light {
+    border: 1px #999 solid;
+    background-color: #fff;
 }
 
 .navbar ul{
@@ -126,22 +139,35 @@ ul li {
 }
 
 ul li {
-    color: #222;
     width: 100%;
     height: 30px;
     text-align: left;
     border: 0px;
-    background-color: #fff;
     padding-top: 3px;
     padding-right: 8px;
-}
-
-ul li:hover{
-    color: #000;
     cursor: pointer;
     text-align: left;
     border-radius: 5px;
+}
+
+.navbar-light ul li {
+    color: #222;
+    background-color: #fff;
+}
+
+.navbar-dark ul li {
+    color: #fff;
+    background-color: #333;
+}
+
+.navbar-light ul li:hover{
+    color: #000;
     background-color: #eee;
+}
+
+.navbar-dark ul li:hover{
+    color: #fff;
+    background-color: #616161;
 }
 
 ul li i{

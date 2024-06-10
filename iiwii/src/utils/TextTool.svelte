@@ -32,7 +32,7 @@ const returnPage = () => {
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'auto';
     selected = false;
-    let icons = document.getElementsByClassName('fa-plus');
+    let icons = document.getElementsByClassName('icons');
     for (const icon of icons) {
         // @ts-ignore
         icon.style.visibility = 'visible';
@@ -68,7 +68,7 @@ const dropdown = (e) => {
         let element = document.getElementById('navbar');
         if (element) {
             const rect = element.getBoundingClientRect();
-            let icons = document.getElementsByClassName('fa-plus');
+            let icons = document.getElementsByClassName('icons');
             for (const icon of icons) {
                 // @ts-ignore
                 icon.style.visibility = 'hidden';
@@ -163,7 +163,7 @@ const contextController = (e) => {
                 {/if}
             {/each}
     </div>
-    <span id="colour" class={`${darkMode ? 'dark' : 'light'}`}>
+    <span id="colour" class={`color-${darkMode ? 'dark' : 'light'}`}>
                         
     </span>
 </div>
@@ -181,6 +181,9 @@ const contextController = (e) => {
     color: #fff;
     border: 1px #616161 solid;
     border-radius: 5px;
+}
+
+.color-dark {
     --cp-bg-color: #333;
     --cp-border-color: #333;
     --cp-text-color: white;

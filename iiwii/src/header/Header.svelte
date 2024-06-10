@@ -2,8 +2,8 @@
 import Light from '../utils/assets/LIGHT.svelte'
 import Dark from '../utils/assets/DARK.svelte';
 import { dark } from '../utils/store';
-let expand = false;
 
+let expand = false;
 let darkMode = false;
 const subscribe = dark.subscribe((value) => darkMode = value)
 
@@ -12,15 +12,24 @@ const subscribe = dark.subscribe((value) => darkMode = value)
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->    
-<div class={`absolute top-2.5 left-3.5 ${darkMode ? 'darktext' : 'lighttext'}`}>
-    {#if expand}
-        <i class="fa-solid fa-minus" on:click={() => expand = false}></i>
-    {:else}
-        <i class="fa-solid fa-plus" on:click={() => expand = true}></i>
-    {/if}
+<div class={`absolute top-2.5 left-3.5 ${darkMode ? 'darktext' : 'lighttext'}`}
+on:mouseenter={() => {
+    expand = true
+}}
+on:mouseleave={() => {
+    expand = false;
+}}>
+        {#if expand}
+            <i class="fa-solid fa-minus icons" on:click={() => expand = false}></i>
+        {:else}
+            <i class="fa-solid fa-plus icons" on:click={() => expand = true}></i>
+        {/if}
     <div class={`dropdown ${expand ? 'expand' : ''}`}>
         <div class={`mt-3 ml-1 flex flex-row cursor-pointer item-${darkMode ? 'dark' : 'light'} px-2 py-1 rounded-md`}
-            on:click={() => dark.set(!darkMode)}>
+            on:click={() => {
+                localStorage.setItem('iiwii-theme', (!darkMode).toString());
+                dark.set(!darkMode);
+            }}>
             <div class="w-10">
             {#if !darkMode}
                 <Dark /> 
