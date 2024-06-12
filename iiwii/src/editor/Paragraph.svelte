@@ -270,7 +270,7 @@ const mouseup = (e, index) => {
     e.preventDefault();
     let element = document.getElementById(id);
     let { start, end } = getSelectionOffsets(element);
-    selectionIndices = {start, end};
+    if (start != end) selectionIndices = {start, end};
     if (start != end) {
         let [ids, srange] = getCoverage(start, end, contents);
         const rect = element.getBoundingClientRect();
@@ -288,6 +288,49 @@ const mouseup = (e, index) => {
             toolSelected = true;
             // highlight style in toolbox
         }
+    }
+}
+
+const blur = (e) => {
+    if (!selectionIndices) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const element = document.getElementById(id);
+    if (element) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+
+        // Find the text node containing the selection start
+        let startNode = element.firstChild;
+        let startOffset = selectionIndices.start;
+        while (startNode && startNode.nodeType !== Node.TEXT_NODE) {
+            if (startOffset >= startNode.textContent.length) {
+                startOffset -= startNode.textContent.length;
+                startNode = startNode.nextSibling;
+            } else {
+                break;
+            }
+        }
+
+        // Find the text node containing the selection end
+        let endNode = startNode;
+        let endOffset = startOffset + (selectionIndices.end - selectionIndices.start);
+        while (endNode && endNode.nodeType !== Node.TEXT_NODE) {
+            if (endOffset >= endNode.textContent.length) {
+                endOffset -= endNode.textContent.length;
+                endNode = endNode.nextSibling;
+            } else {
+                break;
+            }
+        }
+
+        // Set the range
+        range.setStart(startNode, startOffset);
+        range.setEnd(endNode, endOffset);
+
+        // Clear any existing selection and set the new range
+        selection.removeAllRanges();
+        selection.addRange(range);
     }
 }
 
@@ -500,7 +543,7 @@ bind:textContent={content.content}
 <TextTool bind:this={tool} id={id} bind:selected={toolSelected} on:tool={(e) => toolcontroller(e)} />
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class='flex flex-row flex-start hover:cursor-text cursor-text' on:click={focuslast}>
+<div class='flex flex-row flex-start hover:cursor-text cursor-text' >
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 
@@ -513,51 +556,10 @@ bind:textContent={content.content}
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 {#if type != 'ordered' && type != 'unordered'}
-<div on:mousedown={focuslast} class='text-wrap break-all'>
+<div class='text-wrap break-all'>
 <span id={id} class='hover:cursor-text cursor-text text-wrap break-all block' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)}
-on:blur={(e) => {
-    if (!selectionIndices) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const element = document.getElementById(id);
-    if (element) {
-        const selection = window.getSelection();
-        const range = document.createRange();
-
-        // Find the text node containing the selection start
-        let startNode = element.firstChild;
-        let startOffset = selectionIndices.start;
-        while (startNode && startNode.nodeType !== Node.TEXT_NODE) {
-            if (startOffset >= startNode.textContent.length) {
-                startOffset -= startNode.textContent.length;
-                startNode = startNode.nextSibling;
-            } else {
-                break;
-            }
-        }
-
-        // Find the text node containing the selection end
-        let endNode = startNode;
-        let endOffset = startOffset + (selectionIndices.end - selectionIndices.start);
-        while (endNode && endNode.nodeType !== Node.TEXT_NODE) {
-            if (endOffset >= endNode.textContent.length) {
-                endOffset -= endNode.textContent.length;
-                endNode = endNode.nextSibling;
-            } else {
-                break;
-            }
-        }
-
-        // Set the range
-        range.setStart(startNode, startOffset);
-        range.setEnd(endNode, endOffset);
-
-        // Clear any existing selection and set the new range
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }
-}}
+on:blur={blur}
 style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;`}>
     {#each contents as content, index}
     <span 
@@ -582,7 +584,7 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;`}>
 </div>
 {:else}
 <li class={`hover:cursor-text cursor-text`} style={`color: ${darkMode ? '#f8f8f8' : '#000000'}`}>
-<span on:mousedown={focuslast} class='text-wrap break-all box-border'>
+<span class='text-wrap break-all box-border'>
 <span id={id} class='text-wrap break-all box-border' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:input={(e) => input(e)} on:keyup={keyup} on:mouseup={(e) => mouseup(e)}
 style={`line-height: 18px; box-decoration-break: clone;`}>
