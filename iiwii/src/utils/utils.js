@@ -291,3 +291,25 @@ export function focusElement(id) {
         }
     }, 100);
 }
+
+export const focuslast = (e, contents) => {
+    if (contents.length < 1) return;
+    let element = document.getElementById(id);
+    
+    if (element) {
+        if (contents[0].content.length == 0) {
+            e.preventDefault();
+            e.stopPropagation();
+            let range = document.createRange()
+            let sel = window.getSelection()
+            
+            range.setStart(element, 0)
+            range.collapse(true)
+            
+            sel.removeAllRanges()
+            sel.addRange(range)
+        } else {
+            focuspos(element, element.textContent.length - 1)
+        }
+    } 
+}

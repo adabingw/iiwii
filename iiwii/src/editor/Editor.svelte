@@ -44,6 +44,26 @@ const addElement = (e, index) => {
     blocks = [...blocks]
 }
 
+const tab = (e, index) => {
+    const direction = e.detail.direction;
+    blocks[index].tab = blocks[index].tab != undefined ? blocks[index].tab : 0;
+    if (index == 0) {
+        if (blocks[index].tab == 0 && direction == 1) {
+            blocks[index].tab = 4;
+        } else if (blocks[index].tab == 4 && direction == -1) {
+            blocks[index].tab = 0;
+        }
+        return;
+    }
+
+    blocks[index - 1].tab = blocks[index - 1].tab != undefined ? blocks[index - 1].tab : 0;
+    if (blocks[index].tab <= blocks[index - 1].tab && direction == 1) {
+        blocks[index].tab += 4;
+    } else if (blocks[index].tab > 0 && direction == -1) {
+        blocks[index].tab -= 4;
+    }
+}
+
 const actionController = (e, index) => {
     const action = e.detail.action;
     if (action == 'duplicate') {
@@ -317,23 +337,23 @@ const transformElement = (e, type, index) => {
 <div class="px-72 pt-10" id='breh'>
 {#each blocks as item, index}
     {#if item.type == 'text' || item.type == 'h1' || item.type == 'h2' || item.type == 'h3'}
-        <Paragraph id={item.id} bind:contents={item.content}
+        <Paragraph id={item.id} bind:contents={item.content} tab={item.tab == undefined ? 0 : item.tab}
             bind:type={item.type} on:transform={(e) => transformElement(e, item.type, index)}
             on:enter={(e) => enterPresed(e, index, 'text')}
-            on:delete={(e) => ondelete(e, index)} 
+            on:delete={(e) => ondelete(e, index)} on:tab={(e) => tab(e, index)}
             on:shift-down={(e) => shiftdown(e, index)}
             on:ordered={(e) => makeList(e, 'ordered', index)} on:unordered={(e) => makeList(e, 'unordered', index)} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
             on:action={(e) => actionController(e, index)} on:add={(e) => addElement(e, index)}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')} />
     {:else if item.type == 'ordered'}
-        <List id={item.id} bind:contents={item.content} type='ordered' start={item.start}
+        <List id={item.id} bind:contents={item.content} type='ordered' start={item.start} tab={item.tab == undefined ? 0 : item.tab}
             on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
             on:transform={(e) => transformElement(e, item.type, index)}
             on:text={(e) => textEnter(e, index, 'ordered')} />
     {:else if item.type == 'unordered'}
-        <List id={item.id} bind:contents={item.content} type='unordered' 
+        <List id={item.id} bind:contents={item.content} type='unordered' tab={item.tab == undefined ? 0 : item.tab}
             on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
             on:transform={(e) => transformElement(e, item.type, index)}

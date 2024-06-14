@@ -1,6 +1,6 @@
 <script>
 
-import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher, onMount } from 'svelte';
 import { dark } from '../utils/store';
 import { 
     focuspos, 
@@ -23,6 +23,9 @@ import { ACTIONS, FONTSIZE, MENU } from '../utils/constants';
 export let contents = [];
 export let id;
 export let type = 'text';
+export let tab = undefined;
+
+console.log(contents)
 
 let darkMode = false;
 let subscribe = dark.subscribe((value) => darkMode = value);
@@ -122,12 +125,19 @@ const keydown = (e) => {
             //     dispatch('delete', { index: el2.title });
             //     return;
             // }
+        } else if (e.key == 'Tab') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (shift) {
+                dispatch('tab', { direction: -1 });
+            } else {
+                dispatch('tab', { direction: 1 });
+            }
         } else if (e.key == 'Enter') {
             let el2 = getActiveSpan(element);     
             e.preventDefault();
             e.stopPropagation();
             if (el2) {
-                let caret = getOffset(el2);
                 if (toolSelected) {
                     let { start, end } = getSelectionOffsets(element);
                     let [ids, srange] = getCoverage(start, end, contents);
@@ -152,10 +162,11 @@ const keydown = (e) => {
                     }
                     caret = ids.length > 1 ? 0 : srange[0];
                 }
+                let caret2 = getOffset(el2);
                 let bs = [];
                 let cutoff = 0;
                 let id = uuidv4();
-                if (caret == element.textContent.length || (contents.length == 1 && contents[0].content.trimEnd() == '')) {
+                if (caret == element.textContent.length || element.textContent.trimEnd().length == 0) {
                     bs.push({...contents[contents.length - 1]});
                     bs[0].id = id;
                     bs[0].content = ' ';
@@ -167,8 +178,8 @@ const keydown = (e) => {
                             bs.push({...contents[i]});
                             bs[0].id = id;
                             let c = contents[i].content;
-                            bs[0].content = c.substring(caret).length > 0 ? c.substring(caret) : 'd';
-                            contents[i].content = c.substring(0, caret).length > 0 ? c.substring(0, caret) : 'e';
+                            bs[0].content = c.substring(caret2).length > 0 ? c.substring(caret2) : 'd';
+                            contents[i].content = c.substring(0, caret2).length > 0 ? c.substring(0, caret2) : 'e';
                             el2.textContent = contents[i].content;
                         }
                         if (i > cutoff) {
@@ -242,29 +253,7 @@ const keyup = (e) => {
     selText = element.textContent.replace('/', '').trimStart().trimEnd();
 }
 
-const focuslast = (e) => {
-    if (contents.length < 1) return;
-    let element = document.getElementById(id);
-    
-    if (element) {
-        if (contents[0].content.length == 0) {
-            e.preventDefault();
-            e.stopPropagation();
-            let range = document.createRange()
-            let sel = window.getSelection()
-            
-            range.setStart(element, 0)
-            range.collapse(true)
-            
-            sel.removeAllRanges()
-            sel.addRange(range)
-        } else {
-            focuspos(element, element.textContent.length - 1)
-        }
-    } 
-}
-
-let selectionIndices = {};
+let selectionIndices = undefined;
 const mouseup = (e, index) => {
     e.stopPropagation();
     e.preventDefault();
@@ -543,7 +532,7 @@ bind:textContent={content.content}
 <TextTool bind:this={tool} id={id} bind:selected={toolSelected} on:tool={(e) => toolcontroller(e)} />
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class='flex flex-row flex-start hover:cursor-text cursor-text' >
+<span class='flex flex-row flex-start hover:cursor-text cursor-text' >
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 
@@ -558,9 +547,10 @@ bind:textContent={content.content}
 {#if type != 'ordered' && type != 'unordered'}
 <div class='text-wrap break-all'>
 <span id={id} class='hover:cursor-text cursor-text text-wrap break-all block' contenteditable="true" spellcheck="false" 
-on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)}
-on:blur={blur}
-style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;`}>
+on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)} on:blur={blur}
+style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
+        padding-left: ${tab ? (tab * 8) + 'px' : '0px'}
+`}>
     {#each contents as content, index}
     <span 
         class={`${content.style.bold ? 'font-bold' : ''} 
@@ -583,11 +573,15 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;`}>
 </span>
 </div>
 {:else}
-<li class={`hover:cursor-text cursor-text`} style={`color: ${darkMode ? '#f8f8f8' : '#000000'}`}>
-<span class='text-wrap break-all box-border'>
-<span id={id} class='text-wrap break-all box-border' contenteditable="true" spellcheck="false" 
-on:keydown={keydown} on:input={(e) => input(e)} on:keyup={keyup} on:mouseup={(e) => mouseup(e)}
-style={`line-height: 18px; box-decoration-break: clone;`}>
+<li class={`hover:cursor-text cursor-text`} 
+    style={`
+        color: ${darkMode ? '#f8f8f8' : '#000000'};
+        margin-left: ${tab ? (tab * 4) + 'px' : '0px'} !important;
+    `}>
+<span class='text-wrap break-all box-border block w-full'>
+<span id={id} class='hover:cursor-text cursor-text text-wrap break-all block' contenteditable="true" spellcheck="false" 
+on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)} on:blur={blur}
+style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;`}>
     {#each contents as content, index}<span 
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
@@ -609,7 +603,7 @@ style={`line-height: 18px; box-decoration-break: clone;`}>
 </span>
 </li>
 {/if}
-</div>
+</span>
 
 <style>
 .icons {
@@ -664,6 +658,7 @@ i {
 
 li {
     list-style-position: outside !important;
+    width: 100%;
 }
 
 </style>

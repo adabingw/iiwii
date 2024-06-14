@@ -9,7 +9,6 @@ const subscribe = dark.subscribe((value) => darkMode = value);
 
 onMount(() => {
     let dark_ = localStorage.getItem('iiwii-theme');
-    console.log(dark_)
     if (dark_ != null && dark_ != undefined) {
         dark.set(dark_ == "true")
     } else {

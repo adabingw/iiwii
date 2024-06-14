@@ -9,6 +9,7 @@ export let contents = [];
 export let id;
 export let type;
 export let start = 1;
+export let tab = 0;
 
 const dispatch = createEventDispatcher();
 
@@ -30,9 +31,53 @@ const enterPresed = (e, index) => {
         id: id, 
         content: bs
     })
-    contents = [...contents]
+    contents = [...contents];
+    
     focusElement(id);
     // dispatch('enter', e.detail.blocks)
+}
+
+const updateTab = (e, index) => {
+    const direction = e.detail.direction;
+    // want to merge indented list at index i back in
+    if (tab > 0 && direction == -1) {
+        dispatch('untab', { index: index });
+        return;
+    }
+    const content = JSON.parse(JSON.stringify(contents[index]));
+    let id = uuidv4();
+
+    let id2 = content.id;
+    contents[index].type = type;
+    contents[index].id = id;
+    contents[index].tab = tab + 4;
+    // @ts-ignore
+    contents[index].content = [content];
+
+    console.log(contents)
+    contents = [...contents]
+    
+    focusElement(id2);
+}
+
+const deleteTab = (e, index) => {
+    const i = e.detail.index;
+    const content = [...contents[index].content];
+    console.log(content)
+    console.log(contents)
+    // @ts-ignore
+    const id = content.id;
+    if (content.length == 1) {
+        contents[index] = content[0];
+    } else {
+        if (i == 0) {
+            contents.splice(index, 0, content[i])
+        } else if (i == content.length) {
+            contents.splice(index + 1, 0, content[i])
+        } else {
+
+        }
+    }
 }
 
 const ondelete = (e, index) => {
@@ -159,23 +204,30 @@ const actionController = (e, index) => {
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div >
 {#if type == 'ordered'}
 <ol class='list-decimal list-outside' start={start && start != 0 ? start : 1}>
     {#each contents as line, index}
-        <Paragraph id={line.id} bind:contents={line.content} type='ordered'
+    {#if line.type == 'ordered'}
+        <svelte:self id={line.id} bind:contents={line.content} type='ordered' start={line.start} tab={line.tab}
+            on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
+            on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
+            on:untab={(e) => deleteTab(e, index)}
+            on:transform={(e) => transformElement(e, index)} />
+    {:else if line.type == 'text'}
+        <Paragraph id={line.id} bind:contents={line.content} type='ordered' tab={tab}
             on:transform={(e) => transformElement(e, index)}
             on:enter={(e) => enterPresed(e, index)}
             on:action={(e) => actionController(e, index)} 
-            on:delete={(e) => ondelete(e, index)} 
+            on:delete={(e) => ondelete(e, index)} on:tab={(e) => updateTab(e, index)}
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')}/>
+    {/if}
     {/each}
 </ol>
 {:else}
 <ul class='list-disc list-outside'>
     {#each contents as line, index}
-        <Paragraph id={line.id} bind:contents={line.content} type='unordered'
+        <Paragraph id={line.id} bind:contents={line.content} type='unordered' tab={tab}
             on:transform={(e) => transformElement(e, index)}
             on:enter={(e) => enterPresed(e, index)}
             on:action={(e) => actionController(e, index)} 
@@ -185,7 +237,7 @@ const actionController = (e, index) => {
     {/each}
 </ul>
 {/if}
-</div>    
+    
 
 <style>
 
