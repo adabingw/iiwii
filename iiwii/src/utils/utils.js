@@ -15,7 +15,6 @@ export const focusEnd = (element) => {
         textRange.collapse(false);
         textRange.select();
     }
-    
 }
 
 export const focuspos = (element, pos) => {
@@ -287,7 +286,10 @@ export function focusElement(id) {
     setTimeout(() => {
         let newline = document.getElementById(id.toString());
         if (newline) {
-            newline.focus();
+            newline.tabIndex = -1;
+            newline.setAttribute('tabIndex', "-1")
+            focuspos(newline, 0);
+            newline.removeAttribute('tabIndex')
         }
     }, 100);
 }

@@ -10,13 +10,14 @@ let blocks = setup;
 const enterPresed = (e, index, type) => {
     let id = uuidv4();
     let bs = e.detail.blocks;
+    if (bs.length == 0) console.error('blocks empty')
     blocks.splice(index + 1, 0, {
         type: type,
         id: id, 
         content: bs
     })
     blocks = [...blocks]
-    focusElement(id);
+    focusElement(bs[0].id);
 }
 
 const addElement = (e, index) => {
@@ -56,6 +57,9 @@ const tab = (e, index) => {
         return;
     }
 
+    // deepest indent allowed
+    if (direction == 1 && blocks[index].tab == 12) return;
+
     blocks[index - 1].tab = blocks[index - 1].tab != undefined ? blocks[index - 1].tab : 0;
     if (blocks[index].tab <= blocks[index - 1].tab && direction == 1) {
         blocks[index].tab += 4;
@@ -94,7 +98,7 @@ const textEnter = (e, index, type) => {
     } else if (i == 0) {
         let [new_content] = blocks[index]['content'].splice(0, 1);
         // @ts-ignore
-        blocks.splice(index + 1, 0, new_content);
+        blocks.splice(index, 0, new_content);
         focusElement(new_content.id);
     } else {
         let new_b = blocks[index]['content'].splice(i);
@@ -122,7 +126,7 @@ const ondelete = (e, index) => {
         if (blocks[index - 1].type == 'unordered' || blocks[index - 1].type == 'ordered') {
             let c = blocks[index - 1].content;
             // @ts-ignore
-            c[c.length - 1].content.push(...c);
+            c[c.length - 1].content.push(...content);
             id = c[c.length - 1].id;
         } else {
             blocks[index - 1].content.push(...content)
@@ -346,18 +350,20 @@ const transformElement = (e, type, index) => {
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
             on:action={(e) => actionController(e, index)} on:add={(e) => addElement(e, index)}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')} />
-    {:else if item.type == 'ordered'}
-        <List id={item.id} bind:contents={item.content} type='ordered' start={item.start} tab={item.tab == undefined ? 0 : item.tab}
+    {:else if item.type == 'ordered' || item.type == 'unordered'}
+        <List id={item.id} bind:contents={item.content} type={item.type} start={item.start} tab={item.tab == undefined ? 0 : item.tab}
+            canIndent={() => console.log('can indent')}
             on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
             on:transform={(e) => transformElement(e, item.type, index)}
-            on:text={(e) => textEnter(e, index, 'ordered')} />
+            on:text={(e) => textEnter(e, index, item.type)} />
     {:else if item.type == 'unordered'}
         <List id={item.id} bind:contents={item.content} type='unordered' tab={item.tab == undefined ? 0 : item.tab}
+            canIndent={() => console.log('can indent')}
             on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
             on:transform={(e) => transformElement(e, item.type, index)}
-            on:text={(e) => textEnter(e, index, 'unordered')} />
+            on:text={(e) => textEnter(e, index, item.type)} />
     {/if}
 {/each}
 </div>

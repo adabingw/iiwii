@@ -23,9 +23,8 @@ import { ACTIONS, FONTSIZE, MENU } from '../utils/constants';
 export let contents = [];
 export let id;
 export let type = 'text';
-export let tab = undefined;
+export let tab = 0;
 
-console.log(contents)
 
 let darkMode = false;
 let subscribe = dark.subscribe((value) => darkMode = value);
@@ -117,7 +116,7 @@ const keydown = (e) => {
                     index: element.title, 
                     text: element.textContent.trimEnd().length > 0 ? contents : undefined
                 });
-                element.textContent = ' ';
+                if (element.textContent.trimEnd().length == 0) element.textContent = ' ';
                 return;
             }
             // if (el2caret == 0) {
@@ -134,9 +133,10 @@ const keydown = (e) => {
                 dispatch('tab', { direction: 1 });
             }
         } else if (e.key == 'Enter') {
-            let el2 = getActiveSpan(element);     
+            let el2 = getActiveSpan(element);    
             e.preventDefault();
             e.stopPropagation();
+
             if (el2) {
                 if (toolSelected) {
                     let { start, end } = getSelectionOffsets(element);
@@ -169,7 +169,7 @@ const keydown = (e) => {
                 if (caret == element.textContent.length || element.textContent.trimEnd().length == 0) {
                     bs.push({...contents[contents.length - 1]});
                     bs[0].id = id;
-                    bs[0].content = ' ';
+                    bs[0].content = '\u0020';
                 } else {
                     for (let i = 0; i < contents.length; i++) {
                         // @ts-ignore
@@ -178,8 +178,9 @@ const keydown = (e) => {
                             bs.push({...contents[i]});
                             bs[0].id = id;
                             let c = contents[i].content;
-                            bs[0].content = c.substring(caret2).length > 0 ? c.substring(caret2) : 'd';
-                            contents[i].content = c.substring(0, caret2).length > 0 ? c.substring(0, caret2) : 'e';
+                            bs[0].content = c.substring(caret2).length > 0 ? c.substring(caret2) : ' ';
+                            // TODO: doesn't work properly cuz doesn't save text
+                            contents[i].content = c.substring(0, caret2).length > 0 ? c.substring(0, caret2) : ' ';
                             el2.textContent = contents[i].content;
                         }
                         if (i > cutoff) {
@@ -328,11 +329,22 @@ const input = (e) => {
     // @ts-ignore
     if (element && contents[element.title]) {
         // @ts-ignore
-        if (element.textContent.trimEnd() == '') contents[element.title].content = ' ';
+        if (element.textContent.trimEnd().length == 0) contents[element.title].content = ' ';
         else {
             // TODO: fix weird behaviour this leads to
             // contents[element.title].content = element.textContent.trimEnd();
             // element.textContent = contents[element.title].content;
+        }
+    }
+}
+
+const focusSpan = (e) => {
+    const element = document.getElementById(id);
+    if (element.textContent.trimEnd().length == 0) {
+        if (contents.length == 0) console.error('contents empty')
+        const span = document.getElementById(contents[0].id);
+        if (span) {
+            span.focus()
         }
     }
 }
@@ -545,20 +557,24 @@ bind:textContent={content.content}
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 {#if type != 'ordered' && type != 'unordered'}
-<div class='text-wrap break-all'>
+<div class='text-wrap break-all w-full'>
 <span id={id} class='hover:cursor-text cursor-text text-wrap break-all block' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)} on:blur={blur}
 style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
-        padding-left: ${tab ? (tab * 8) + 'px' : '0px'}
+        padding-left: ${tab ? (tab * 8) + 'px' : '0px'};
+        width: 100%;
+        display: block;
 `}>
     {#each contents as content, index}
-    <span 
+    <span
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
                 ${content.content.trimEnd().length > 0 && content.style.code ? codeStyle(index) : ''}
                 ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
                 ${content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
-                editableSpan text-wrap break-all`} 
+                editableSpan text-wrap break-all
+                whitespace-pre-wrap`} 
+        contenteditable="true"
         style={`
             color: ${darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color}; 
             font-size: ${content.content.trimEnd().length > 0 && content.style.code ? fontsize - 2 : fontsize}px; 
@@ -567,6 +583,8 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
             border-color: ${darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color};
             -webkit-box-decoration-break: clone;
             box-decoration-break: clone;
+            margin-left: 0px;
+            padding: 0px;
         `} 
         title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span>
     {/each}
