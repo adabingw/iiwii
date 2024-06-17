@@ -1,3 +1,8 @@
+/**
+ * functions to handle colours
+ */
+
+// converts hex to rgb
 export const hexToRgb = (hex) => {
     const bigint = parseInt(hex.slice(1), 16);
     const r = (bigint >> 16) & 255;
@@ -10,14 +15,17 @@ export const hexToRgb = (hex) => {
     };
 }
 
+// converts rgb to hex
 export const rgbToHex = (r, g, b) => {
     return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
 }
 
+// calculates the luminance of an rgb
 export const calculateLuminance = ({ r, g, b }) => {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+// inverts the colours to be shown in light mode
 export const adjustBrightnessToLight = (hex) => {
     const rgb = hexToRgb(hex);
     const luminance = calculateLuminance(rgb);
@@ -35,6 +43,8 @@ export const adjustBrightnessToLight = (hex) => {
     }
 }
 
+
+// inverts the colours to be shown in dark mode
 export const adjustBrightnessToDark = (hex) => {
     const rgb = hexToRgb(hex);
     const luminance = calculateLuminance(rgb);

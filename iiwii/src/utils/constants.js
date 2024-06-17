@@ -2,6 +2,7 @@ export const setup = [
     {
         type: 'h1',
         id: '9e7bc2a7-885d-46aa-9a1e-c1673a25ed28',
+        tab: 0,
         content: [
             {
                 content: 'welcome to iiwii (it is what it is)',
@@ -12,7 +13,8 @@ export const setup = [
                     'underline': false,
                     'code': false,
                     'strikethrough': false,
-                    'color': '#000000'
+                    'color': '#000000',
+                    'link': undefined,
                 }
             }
         ]
@@ -20,6 +22,7 @@ export const setup = [
     {
         type: 'h2',
         id: '6c923ecb-302a-4778-b4fd-b5112e8bbc26',
+        tab: 0,
         content: [
             {
                 content: 'This is a Header 2',
@@ -30,7 +33,8 @@ export const setup = [
                     'underline': false,
                     'code': false,
                     'strikethrough': false,
-                    'color': '#000000'
+                    'color': '#000000',
+                    'link': undefined,
                 }
             }
         ]
@@ -38,6 +42,7 @@ export const setup = [
     {
         type: 'text',
         id: '5bb9b175-ae25-4999-be06-575391d732ef',
+        tab: 0,
         content: [
             {
                 content: 'And this is a Header 3',
@@ -48,7 +53,8 @@ export const setup = [
                     'underline': true,
                     'code': false,
                     'strikethrough': true,
-                    'color': '#000000'
+                    'color': '#000000',
+                    'link': undefined,
                 }
             }
         ]
@@ -56,6 +62,7 @@ export const setup = [
     {
         type: 'text',
         id: 'c32d8b45-92fe-44f6-8b61-42c2107dfe87',
+        tab: 0,
         content: [
             {
                 content: 'this is text ',
@@ -66,7 +73,8 @@ export const setup = [
                     'underline': false,
                     'code': false,
                     'strikethrough': false,
-                    'color': '#000000'
+                    'color': '#000000',
+                    'link': 'www.reddit.com',
                 }
             },
             {
@@ -78,7 +86,8 @@ export const setup = [
                     'underline': false,
                     'code': false,
                     'strikethrough': false,
-                    'color': '#000000'
+                    'color': '#000000',
+                    'link': undefined,
                 }
             },
         ]
@@ -87,6 +96,7 @@ export const setup = [
         type: "ordered",
         start: 3,
         id: 'a10f7afb-bda3-4395-8da4-121a24e4677e',
+        tab: 0,
         content: [
             {
                 type: 'text',
@@ -101,7 +111,8 @@ export const setup = [
                             'underline': false,
                             'code': false,
                             'strikethrough': false,
-                            'color': '#000000'
+                            'color': '#000000',
+                            'link': undefined,
                         }
                     },
                     {
@@ -113,7 +124,8 @@ export const setup = [
                             'underline': true,
                             'code': false,
                             'strikethrough': false,
-                            'color': '#8c709c'
+                            'color': '#8c709c',
+                            'link': undefined,
                         }
                     }
                 ]
@@ -131,7 +143,8 @@ export const setup = [
                             'underline': true,
                             'code': true,
                             'strikethrough': false,
-                            'color': '#000000'
+                            'color': '#000000',
+                            'link': undefined,
                         }
                     }
                 ]
@@ -141,7 +154,7 @@ export const setup = [
                 id: 'a121db05-dcaa-4955-a690-3b75afbb753f',
                 content: [
                     {
-                        content: 'a',
+                        content: 'abbbbbbbbb',
                         id: '5ed0ac2c-7fe2-4c2e-a3d4-e6d9034d3069',
                         style: {
                             'bold': false, 
@@ -149,7 +162,8 @@ export const setup = [
                             'underline': false,
                             'code': false,
                             'strikethrough': false,
-                            'color': '#000000'
+                            'color': '#000000',
+                            'link': 'www.reddit.com',
                         }
                     }
                 ]
@@ -289,6 +303,11 @@ export const TOOL = [
             'shortcut': 'Ctrl + m',
             'displayText': 'Code', 
             'class': 'fa-solid fa-code fa-xs fa-fw'
+        }, {
+            'name': 'link', 
+            'shortcut': 'Ctrl + k',
+            'displayText': 'link', 
+            'class': 'fa-solid fa-link fa-xs fa-fw'
         }
         ]
     }, 

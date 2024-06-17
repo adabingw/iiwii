@@ -1,13 +1,14 @@
 <script>
 import { createEventDispatcher } from 'svelte';
-import { clickOutside } from './utils.js';
+import { clickOutside, hideIcons } from './utils.js';
 import { TOOL } from './constants';
 import ContextMenu from './ContextMenu.svelte';
 import { tooltip } from "@svelte-plugins/tooltips";
 import ColorPicker from 'svelte-awesome-color-picker';
 import Wrapper from './Wrapper.svelte';
 import { dark } from './store.js';
-  import { adjustBrightnessToDark, adjustBrightnessToLight } from './colors.js';
+import { adjustBrightnessToDark } from './colors.js';
+  import Slot from './Slot.svelte';
 
 export let id;
 export let selected;
@@ -24,6 +25,8 @@ let turninto = false;
 let style = "";
 let firstShown = false;
 let darkMode = false;
+let showLink = false;
+let linkText = '';
 const subscribe = dark.subscribe((value) => darkMode = value)
 const dispatch = createEventDispatcher();
 
@@ -54,7 +57,7 @@ const menuClick = (context, subcontext, value) => {
             subcontext: subcontext,
             elements: index,
             range: range,
-            value: subcontext == 'color' ? value : value == 'true'
+            value: (subcontext == 'color' || subcontext == 'link') ? value : value == 'true'
         })
         onPageClick();
     }
@@ -68,11 +71,7 @@ const dropdown = (e) => {
         let element = document.getElementById('navbar');
         if (element) {
             const rect = element.getBoundingClientRect();
-            let icons = document.getElementsByClassName('icons');
-            for (const icon of icons) {
-                // @ts-ignore
-                icon.style.visibility = 'hidden';
-            }
+            hideIcons();
             menu.openMenu(rect.bottom - rect.top - 10, 0, rect.bottom);
         }
         turninto = true;
@@ -84,8 +83,15 @@ export const onPageClick = (e) => {
         firstShown = false;
         return;
     }
-    // e.preventDefault();
-    // e.stopPropagation();
+    if (linkText) {
+        dispatch('tool', {
+            context: 'elements',
+            subcontext: 'link',
+            elements: index,
+            range: range,
+            value: linkText
+        })
+    }
     selected = false;
     returnPage();
     dispatch('close')
@@ -106,8 +112,6 @@ export const openMenu = (top_, left_, bottom_, textStyle_, index_, range_, flagF
         style = `position: absolute; bottom:${window.innerHeight - top + 15}px; left:${left}px; z-index: 1;`
     }
     showMenu = true;
-    let body = document.getElementById('homepage');
-    if (body) body.style.overflowY = 'hidden';
 }
 
 const contextController = (e) => {
@@ -119,6 +123,18 @@ const contextController = (e) => {
     returnPage();
 }
 
+const isDisabled = (style, name) => {
+    if (name == 'link' && style['code']) {
+        return true;
+    }
+
+    if (name == 'code' && style['link']) {
+        return true;
+    }
+
+    return false;
+}
+
 </script>
 
 {#if showMenu}
@@ -126,15 +142,39 @@ const contextController = (e) => {
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->  
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <div style={style} class:show={showMenu} use:clickOutside on:click_outside={onPageClick}>
+    {#if showLink}
+    <Slot>
+        <span class={`flex flex-row items-center justify-evenly border-2 rounded-md px-5 py-1`}
+            style={`
+                border: 1px solid #d3d3d3;
+                background-color: white;
+                width: 350px;
+                min-width: fit-content;
+                position: absolute; 
+                right: ${0}px; 
+                top: ${60}px;
+                padding-top: 5px;
+                padding-bottom: 5px;
+                padding-left: 10px;
+                padding-right: 10px;
+            `}>
+            <input class='link-input' bind:value={linkText} placeholder="Paste link"/>
+        </span>
+    </Slot>
+    {/if}
     <ContextMenu bind:this={menu} id={id} on:context={(e) => contextController(e)}/>
     <div class={`navbar navbar-${darkMode ? 'dark' : 'light'} overflow-hidden`} id="navbar">
             {#each TOOL as item, index}
                 {#if item.items}
                     {#each item.items as i}
-                        <span on:click={() => menuClick(item.name, i.name, textStyle && textStyle[i.name] ? !textStyle[i.name] : 'true')}
-                            class={textStyle && textStyle[i.name] ? 'in-use' : ''}
+                    {#if i.name == 'link'}
+                        <span 
+                            on:click={() => {
+                                showLink = true;
+                            }}
+                            class={`${isDisabled(textStyle, i.name) ? 'disabled' : ''} ${textStyle && textStyle[i.name] ? 'in-use' : ''}`}
                             use:tooltip={{
-                                content: `${i.displayText} (${i.shortcut})`,
+                                content: `${i.displayText} \n (${i.shortcut})`,
                                 // @ts-ignore
                                 style: { backgroundColor: '#515151', color: '#ffffff', padding: '5px 5px 5px 5px' },
                                 position: `top`,
@@ -143,6 +183,24 @@ const contextController = (e) => {
                             }}>
                             <i class={`${i.class}`}></i>
                         </span>
+                    {:else}
+                        <span 
+                            on:click={() => {
+                                if (isDisabled(textStyle, i.name)) return;
+                                menuClick(item.name, i.name, textStyle && textStyle[i.name] ? !textStyle[i.name] : 'true')
+                            }}
+                            class={`${isDisabled(textStyle, i.name) ? 'disabled' : ''} ${textStyle && textStyle[i.name] ? 'in-use' : ''}`}
+                            use:tooltip={{
+                                content: `${i.displayText} \n (${i.shortcut})`,
+                                // @ts-ignore
+                                style: { backgroundColor: '#515151', color: '#ffffff', padding: '5px 5px 5px 5px' },
+                                position: `top`,
+                                animation: 'slide',
+                                arrow: false
+                            }}>
+                            <i class={`${i.class}`}></i>
+                        </span>
+                    {/if}
                     {/each}
                 {:else if item.name == 'color'}
                     <span class={`pt-3 overflow-hidden`}>
@@ -173,6 +231,16 @@ const contextController = (e) => {
 * {
     padding: 0;
     margin: 0;
+}
+
+.disabled {
+    color: #818181;
+    background-color: transparent;
+}
+
+.disabled:hover {
+    background-color: transparent !important;
+    cursor: auto !important;
 }
 
 .navbar-dark {

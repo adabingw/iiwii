@@ -18,6 +18,14 @@ const subscribe = dark.subscribe((value) => darkMode = value);
 const dispatch = createEventDispatcher();
 
 const menuClick = (context, subcontext) => {
+    returnPage();
+    dispatch('context', {
+        context: context,
+        subcontext: subcontext
+    })
+}
+
+const returnPage = () => {
     showMenu = false; 
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'auto';
@@ -27,24 +35,12 @@ const menuClick = (context, subcontext) => {
         // @ts-ignore
         icon.style.visibility = 'visible';
     }
-    dispatch('context', {
-        context: context,
-        subcontext: subcontext
-    })
 }
 
 export const onPageClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    showMenu = false;
-    selected = false;
-    let body = document.getElementById('homepage');
-    if (body) body.style.overflowY = 'auto';
-    let icons = document.getElementsByClassName('icons');
-    for (const icon of icons) {
-        // @ts-ignore
-        icon.style.visibility = 'visible';
-    }
+    returnPage();
     dispatch('close')
 }
 
@@ -59,8 +55,6 @@ export const openMenu = (top_, left_, bottom_) => {
         style = `position: absolute; bottom:${window.innerHeight - bottom + 25}px; left:${left}px; z-index: 1;`
     }
     showMenu = true;
-    let body = document.getElementById('homepage');
-    if (body) body.style.overflowY = 'hidden';
 }
 
 $: {

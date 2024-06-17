@@ -8,13 +8,14 @@ import List from "./List.svelte";
 let blocks = setup;
 
 const enterPresed = (e, index, type) => {
-    let id = uuidv4();
-    let bs = e.detail.blocks;
+    const id = uuidv4();
+    const bs = e.detail.blocks;
     if (bs.length == 0) console.error('blocks empty')
     blocks.splice(index + 1, 0, {
         type: type,
         id: id, 
-        content: bs
+        content: bs,
+        tab: blocks[index].tab ? blocks[index].tab : 0
     })
     blocks = [...blocks]
     focusElement(bs[0].id);
@@ -22,11 +23,12 @@ const enterPresed = (e, index, type) => {
 
 const addElement = (e, index) => {
     const type = e.detail.type;
-    let id = uuidv4();
-    let id2 = uuidv4();
+    const id = uuidv4();
+    const id2 = uuidv4();
     blocks.splice(index + 1, 0, {
         type: type,
-        id: id, 
+        id: id,
+        tab: blocks[index].tab ? blocks[index].tab : 0,
         content: [
             {
                 content: ' ',
@@ -37,7 +39,8 @@ const addElement = (e, index) => {
                     'underline': false,
                     'code': false,
                     'strikethrough': false,
-                    'color': '#000000'
+                    'color': '#000000',
+                    'link': undefined
                 }
             },
         ]
@@ -81,12 +84,10 @@ const actionController = (e, index) => {
 
 // list -> text when enter / delete on empty entry
 const textEnter = (e, index, type) => {
-    let i = e.detail.index;
-    let c = blocks[index].content;
-    let id = uuidv4();
-
-    if (i == c.length - 1) {
-        let [new_content] = blocks[index]['content'].splice(i, 1);
+    const i = e.detail.index;
+    const id = uuidv4();
+    if (i == blocks[index].content.length - 1) {
+        const [new_content] = blocks[index]['content'].splice(i, 1);
         if (blocks[index]['content'].length != 0) {
             // @ts-ignore
             blocks.splice(index + 1, 0, new_content);   
@@ -96,13 +97,13 @@ const textEnter = (e, index, type) => {
         }
         focusElement(new_content.id);
     } else if (i == 0) {
-        let [new_content] = blocks[index]['content'].splice(0, 1);
+        const [new_content] = blocks[index]['content'].splice(0, 1);
         // @ts-ignore
         blocks.splice(index, 0, new_content);
         focusElement(new_content.id);
     } else {
         let new_b = blocks[index]['content'].splice(i);
-        let [new_content] = new_b.splice(0, 1);
+        const [new_content] = new_b.splice(0, 1);
         // @ts-ignore
         blocks.splice(index + 1, 0, new_content);
         focusElement(new_content.id);
@@ -117,8 +118,8 @@ const textEnter = (e, index, type) => {
 }
 
 const ondelete = (e, index) => {
-    let i = parseInt(e.detail.index);
-    let content = e.detail.text;
+    const i = parseInt(e.detail.index);
+    const content = e.detail.text;
     // backspace on an element that isn't empty should append that element to the previous element
     if (content) {
         if (index < 1) return;
@@ -135,11 +136,8 @@ const ondelete = (e, index) => {
         blocks.splice(index, 1);
         focusElement(id);
     } else {
-        // deleting an item in an element
-        if (blocks[index].content.length != 1) {
-            blocks[index].content.splice(i, 1);
-        // deleted everything
-        } else if (blocks[index].content.length == 1 && blocks.length == 1) {
+        // deleted all the text in the page, retain structure
+        if (blocks[index].content.length == 1 && blocks.length == 1) {
             blocks[index]['content'][0]['content'] = ' ';
         // delete entire element 
         } else if (blocks[index].content.length == 1 && blocks.length > 1) {
@@ -167,7 +165,7 @@ const updown = (e, index, direction) => {
         let pos = e.detail.index;
         let f = 16;
         if (blocks[index - 1].type == 'ordered' || blocks[index - 1].type == 'unordered') {
-            let c = blocks[index - 1].content;
+            const c = blocks[index - 1].content;
             if (c.length < 1) return;
             block = document.getElementById(c[c.length - 1].id.toString());
         } else {
@@ -192,7 +190,6 @@ const updown = (e, index, direction) => {
         }
     } else if (direction == 'down') {
         if (index == blocks.length - 1) return;
-        let pos = e.detail.index;
         let block;
         if (blocks[index + 1].type == 'ordered' || blocks[index + 1].type == 'unordered') {
             let c = blocks[index + 1].content;
@@ -203,26 +200,17 @@ const updown = (e, index, direction) => {
         }
 
         if (block) {
-            let len = block.textContent.length;
             focusEnd(block)
-            // TODO: fix positioning issue
-            return;
-            if (pos > len) {
-                focusEnd(block);
-            } else {
-                focuspos(block, pos);
-            }
         }
     }
 }
 
-// TODO: keep a record of the length 
 const leftright = (index, direction) => {
     if (direction == 'left') {
         if (index == 0) return;
         let block;
         if (blocks[index - 1].type == 'ordered' || blocks[index - 1].type == 'unordered') {
-            let c = blocks[index - 1].content;
+            const c = blocks[index - 1].content;
             if (c.length < 1) return;
             block = document.getElementById(c[c.length - 1].id.toString());
         } else {
@@ -235,37 +223,7 @@ const leftright = (index, direction) => {
         if (index == blocks.length - 1) return;
         let block;
         if (blocks[index + 1].type == 'ordered' || blocks[index + 1].type == 'unordered') {
-            let c = blocks[index + 1].content;
-            if (c.length < 1) return;
-            block = document.getElementById(c[0].id.toString());
-        } else {
-            block = document.getElementById(blocks[index + 1].id.toString());
-        }
-        if (block) {
-            block.focus();
-        }
-    }
-}
-
-const shiftdown = (e, index) => {
-    if (e.detail.type == 'left') {
-        if (index == 0) return;
-        let block;
-        if (blocks[index - 1].type == 'ordered' || blocks[index - 1].type == 'unordered') {
-            let c = blocks[index - 1].content;
-            if (c.length < 1) return;
-            block = document.getElementById(c[c.length - 1].id.toString());
-        } else {
-            block = document.getElementById(blocks[index - 1].id.toString());
-        }
-        if (block) {
-            // extendSelection(block, false);
-        }
-    } else {
-        if (index == blocks.length - 1) return;
-        let block;
-        if (blocks[index + 1].type == 'ordered' || blocks[index + 1].type == 'unordered') {
-            let c = blocks[index + 1].content;
+            const c = blocks[index + 1].content;
             if (c.length < 1) return;
             block = document.getElementById(c[0].id.toString());
         } else {
@@ -279,9 +237,9 @@ const shiftdown = (e, index) => {
 
 const makeList = (e, type, index) => {
     e.preventDefault();
-    let id = uuidv4();
-    let content = {...blocks[index]};
-    let id2 = content.id;
+    const id = uuidv4();
+    const content = {...blocks[index]};
+    const id2 = content.id;
     for (let i = 0; i < content.content.length; i++) {
         if (i == 0) content.content[i].content = ' ';
         else content.content[i].content = '';
@@ -298,11 +256,12 @@ const transformElement = (e, type, index) => {
     const from = e.detail.from; 
     const to = e.detail.to; 
     const i = e.detail.i;
+    const t = blocks[index].tab;
 
     if (from == 'ordered' || from == 'unordered') {
-        let id = uuidv4();
+        const id = uuidv4();
         let new_b = blocks[index]['content'].splice(i);
-        let [new_content] = new_b.splice(0, 1);
+        const [new_content] = new_b.splice(0, 1);
         new_content.type = to;
         if (to == 'h1' || to == 'h2' || to == 'h3' || to == 'text') {
             // @ts-ignore
@@ -313,6 +272,7 @@ const transformElement = (e, type, index) => {
             blocks.splice(index + 1, 0, {
                 type: to,
                 id: id, 
+                tab: t,
                 // @ts-ignore
                 content: [new_content]
             });
@@ -321,15 +281,17 @@ const transformElement = (e, type, index) => {
         blocks.splice(index + 2, 0, {
             type: type,
             id: id, 
+            tab: t,
             content: new_b
         });
     } else {
-        let id = uuidv4();
-        let new_content = JSON.parse(JSON.stringify(blocks[index]));
+        const id = uuidv4();
+        const new_content = JSON.parse(JSON.stringify(blocks[index]));
         new_content.type = 'text';
         blocks[index] = {
             type: to, 
             id: id,
+            tab: t,
             content: [new_content]
         }
     }
@@ -345,20 +307,13 @@ const transformElement = (e, type, index) => {
             bind:type={item.type} on:transform={(e) => transformElement(e, item.type, index)}
             on:enter={(e) => enterPresed(e, index, 'text')}
             on:delete={(e) => ondelete(e, index)} on:tab={(e) => tab(e, index)}
-            on:shift-down={(e) => shiftdown(e, index)}
             on:ordered={(e) => makeList(e, 'ordered', index)} on:unordered={(e) => makeList(e, 'unordered', index)} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')}
             on:action={(e) => actionController(e, index)} on:add={(e) => addElement(e, index)}
             on:right={(e) => leftright(index, 'right')} on:left={(e) => leftright(index, 'left')} />
     {:else if item.type == 'ordered' || item.type == 'unordered'}
-        <List id={item.id} bind:contents={item.content} type={item.type} start={item.start} tab={item.tab == undefined ? 0 : item.tab}
-            canIndent={() => console.log('can indent')}
-            on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
-            on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 
-            on:transform={(e) => transformElement(e, item.type, index)}
-            on:text={(e) => textEnter(e, index, item.type)} />
-    {:else if item.type == 'unordered'}
-        <List id={item.id} bind:contents={item.content} type='unordered' tab={item.tab == undefined ? 0 : item.tab}
+        <List id={item.id} bind:contents={item.content} type={item.type} start={item.start ? item.start : 1} 
+            tab={item.tab == undefined ? 0 : item.tab}
             canIndent={() => console.log('can indent')}
             on:left={() => leftright(index, 'left')} on:right={(e) => leftright(index, 'right')} 
             on:up={(e) => updown(e, index, 'up')} on:down={(e) => updown(e, index, 'down')} 

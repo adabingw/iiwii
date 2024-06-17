@@ -1,4 +1,5 @@
 // @ts-nocheck
+// focuses div at end
 export const focusEnd = (element) => {
     element.focus();
     if (typeof window.getSelection != "undefined"
@@ -17,6 +18,7 @@ export const focusEnd = (element) => {
     }
 }
 
+// focuses div at position
 export const focuspos = (element, pos) => {
     for(let node of element.childNodes){
         if(node.nodeType == 3){ // we have a text node
@@ -42,6 +44,7 @@ export const focuspos = (element, pos) => {
     return pos; // needed because of recursion stuff
 }
 
+// gets the caret offset of an element
 export const getOffset = (element) => {
     if (!element) return -1;
     let caretOffset = 0;
@@ -92,6 +95,7 @@ export const getIndexFromOffset = (offset, wrapped) => {
     return offset;
 }
 
+// gets the start and end positions of a selection
 export const getSelectionOffsets = (contentEditableElement) => {
     let selection = window.getSelection();
     let anchorNode = selection.anchorNode;
@@ -210,6 +214,7 @@ export const getWrapped = (element, fontSize) => {
     return lines;
 }
 
+// get the current active div
 export const getActiveDiv = () => {
     let sel = window.getSelection();
     let range = sel.getRangeAt(0);
@@ -225,6 +230,7 @@ export const getActiveDiv = () => {
     return activeDiv;
 }
 
+// get the current active span
 export const getActiveSpan = (div) => {
     const selection = window.getSelection();
     if (!selection.rangeCount) return null;
@@ -239,6 +245,7 @@ export const getActiveSpan = (div) => {
     return null;
 }
 
+// returns whether an object is deeply equal to each other
 export const deepEqual = (obj1, obj2) => {
     // Check if both arguments are objects
     if (typeof obj1 !== 'object' || typeof obj2 !== 'object' || obj1 === null || obj2 === null) {
@@ -264,7 +271,7 @@ export const deepEqual = (obj1, obj2) => {
 }
 
 /** Dispatch event on click outside of node */
-export function clickOutside(node) {
+export const clickOutside = (node) => {
     const handleClick = event => {
         if (node && !node.contains(event.target) && !event.defaultPrevented) {
             node.dispatchEvent(
@@ -282,7 +289,8 @@ export function clickOutside(node) {
     }
 }
 
-export function focusElement(id) {
+// focuses element after creation
+export const focusElement = (id) => {
     setTimeout(() => {
         let newline = document.getElementById(id.toString());
         if (newline) {
@@ -294,24 +302,13 @@ export function focusElement(id) {
     }, 100);
 }
 
-export const focuslast = (e, contents) => {
-    if (contents.length < 1) return;
-    let element = document.getElementById(id);
-    
-    if (element) {
-        if (contents[0].content.length == 0) {
-            e.preventDefault();
-            e.stopPropagation();
-            let range = document.createRange()
-            let sel = window.getSelection()
-            
-            range.setStart(element, 0)
-            range.collapse(true)
-            
-            sel.removeAllRanges()
-            sel.addRange(range)
-        } else {
-            focuspos(element, element.textContent.length - 1)
-        }
-    } 
+// hide icons when contextmenu
+export const hideIcons = () => {
+    const icons = document.getElementsByClassName('fa-plus');
+    for (const icon of icons) {
+        // @ts-ignore
+        icon.style.visibility = 'hidden';
+    }
+    let body = document.getElementById('homepage');
+    if (body) body.style.overflowY = 'hidden';
 }

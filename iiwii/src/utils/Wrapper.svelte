@@ -1,11 +1,10 @@
 <script>
-	import { portal } from "svelte-portal";
-	
-	export let wrapper;
-	export let isOpen;
-	export let isPopup;
-	/* svelte-ignore unused-export-let */
-	export let toRight;
+// for colour picker
+import { portal } from "svelte-portal";
+
+export let wrapper;
+export let isOpen;
+export let isPopup;
 </script>
 
 <div

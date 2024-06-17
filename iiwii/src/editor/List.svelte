@@ -15,27 +15,24 @@ export let canIndent;
 const dispatch = createEventDispatcher();
 
 const enterPresed = (e, index) => {
-    let element = document.getElementById(contents[index].id);
+    const element = document.getElementById(contents[index].id);
     if (element) {
-        let text = element.textContent;
-        if (text.trimEnd().length == 0) {
+        if (element.textContent.trimEnd().length == 0) {
             dispatch('text', {
                 index: index
             });
             return;
         }
     }
-    let id = uuidv4();
-    let bs = e.detail.blocks;
+    const id = uuidv4();
+    const bs = e.detail.blocks;
     contents.splice(index + 1, 0, {
         type: 'text',
         id: id, 
         content: bs
     })
-    contents = [...contents];
-    
+    contents = [...contents];    
     focusElement(id);
-    // dispatch('enter', e.detail.blocks)
 }
 
 const canIndentFunc = (index) => {
@@ -56,7 +53,7 @@ const updateTab = (e, index) => {
     }
 
     const content = JSON.parse(JSON.stringify(contents[index]));
-    let id = uuidv4();
+    const id = uuidv4();
 
     let merged = false;
     contents[index].tab = contents[index].tab ? contents[index].tab + 4 : tab + 4; 
@@ -79,7 +76,7 @@ const updateTab = (e, index) => {
         }
     }
 
-    let id2 = content.id;
+    const id2 = content.id;
     if (merged) {
         contents.splice(index, 1)
     } else {
@@ -95,7 +92,7 @@ const updateTab = (e, index) => {
 }
 
 const deleteTab = (i, index) => {
-    let content = contents.splice(index, 1)[0];
+    const content = contents.splice(index, 1)[0];
     if (content.tab == 0) return;
     // @ts-ignore
     if (content.length == 1) {
@@ -109,18 +106,14 @@ const deleteTab = (i, index) => {
             contents.splice(index, 0, content)
             contents.splice(index + 1, 0, line)
         } else {
-            let type = content.type;
-            let id2 = uuidv4();
-            let t = content.tab;
-            let pre = content.content.splice(0, i);
-
+            const id2 = uuidv4();
+            const pre = content.content.splice(0, i);
             contents.splice(index, 0, {
                 id: id2, 
-                type: type, 
-                tab: t, 
+                type: content.type, 
+                tab: content.tab, 
                 content: [ ...pre ]
             })
-
             line.tab = line.tab ? line.tab - 4 : tab - 4;
             contents.splice(index + 1, 0, line);
             contents.splice(index + 2, 0, content);
@@ -158,10 +151,10 @@ const makelist = (e, index) => {
 }
 
 const ondelete = (e, index) => {
-    let element = document.getElementById(contents[index].id);
-    let context = e.detail.text;
+    const element = document.getElementById(contents[index].id);
+    const context = e.detail.text;
     if (element) {
-        let text = element.textContent;
+        const text = element.textContent;
         if (text.trimEnd().length == 0 || context) {
             if (tab) {
                 // indented list delete -> just append to previous
@@ -184,7 +177,7 @@ const ondelete = (e, index) => {
             }
         }
     }
-    let i = parseInt(e.detail.index);
+    const i = parseInt(e.detail.index);
     if (contents[index].content.length != 1) {
         contents[index].content.splice(i, 1);
     } else if (contents[index].content.length == 1 && contents.length == 1) {
@@ -192,7 +185,7 @@ const ondelete = (e, index) => {
     } else if (contents[index].content.length == 1 && contents.length > 1) {
         contents.splice(index, 1)
         if (index > 0) {
-            let block = contents[index - 1]
+            const block = contents[index - 1]
             focusElement(block.id)
         }
     }
@@ -209,16 +202,14 @@ const updown = (e, index, direction) => {
             return;
         }
         let pos = e.detail.index;
-        let block = document.getElementById(contents[index - 1].id.toString());
-        let wrap = getWrapped(block, 16)
+        const block = document.getElementById(contents[index - 1].id.toString());
+        const wrap = getWrapped(block, 16)
     
         if (block) {
-            let len = block.textContent.length;
-            let lines = wrap.length;
-            if (lines > 1) {
+            if (wrap.length > 1) {
                 pos = getOffsetFromIndex(pos, wrap);
             }
-            if (pos >= len) {
+            if (pos >= block.textContent.length) {
                 focusEnd(block);
             } else {
                 focusEnd(block);
@@ -231,18 +222,16 @@ const updown = (e, index, direction) => {
             });
             return;
         }
-        let pos = e.detail.index;
-        let block = document.getElementById(contents[index + 1].id.toString());
+        const pos = e.detail.index;
+        const block = document.getElementById(contents[index + 1].id.toString());
         if (block) {
-            let len = block.textContent.length;
-            if (pos > len) {
+            if (pos > block.textContent.length) {
                 focusEnd(block);
             } else {
                 focuspos(block, pos);
             }
         }
     }
-    // dispatch(direction, { index: e.detail.index })
 }
 
 const leftright = (index, direction) => {
@@ -251,12 +240,8 @@ const leftright = (index, direction) => {
             dispatch('left');
             return;
         }
-        let block = document.getElementById(contents[index - 1].id.toString());
+        const block = document.getElementById(contents[index - 1].id.toString());
         if (block) {
-            let len = 0
-            contents[index - 1].content.forEach((val) => {
-                len += val.content.length;
-            })
             focusEnd(block);
         }
     } else {
@@ -269,7 +254,6 @@ const leftright = (index, direction) => {
             block.focus();
         }
     }
-    // dispatch(direction);
 }
 
 const transformElement = (e, index) => {

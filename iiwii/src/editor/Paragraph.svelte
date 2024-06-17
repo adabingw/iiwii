@@ -1,9 +1,8 @@
 <script>
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { dark } from '../utils/store';
+import { dark, addToast } from '../utils/store';
 import { 
-    focuspos, 
     getActiveSpan, 
     getOffset, 
     getWrapped, 
@@ -12,19 +11,23 @@ import {
     getCoverage, 
     getSelectionOffsets, 
     deepEqual,
-    getActiveDiv
+    getActiveDiv,
+    hideIcons,
+    focuspos
 } from '../utils/utils';
 import { adjustBrightnessToLight } from '../utils/colors';
 import {v4 as uuidv4} from 'uuid';
 import ContextMenu from '../utils/ContextMenu.svelte';
 import TextTool from '../utils/TextTool.svelte';
 import { ACTIONS, FONTSIZE, MENU } from '../utils/constants';
+import Slot from '../utils/Slot.svelte';
+import World from '../utils/assets/WORLD.svelte';
+import Toasts from '../utils/Toasts.svelte';
 
 export let contents = [];
 export let id;
 export let type = 'text';
 export let tab = 0;
-
 
 let darkMode = false;
 let subscribe = dark.subscribe((value) => darkMode = value);
@@ -33,26 +36,30 @@ let selText = '';
 let menu;
 let tool;
 let action;
+let linkSelected = undefined;
 let actionSelected = false;
 let toolSelected = false;
 let selected = false;
+let linkSelectInfo = {
+    link: undefined,
+    text: undefined,
+    index: -1,
+    x: 0,
+    y: 0
+}
 let lengths = [];
 const dispatch = createEventDispatcher();
 let shift = false;
 let ctrl = false;
 
 const keydown = (e) => {            
-    // if (selected || toolSelected) {
-    //     e.stopPropagation();
-    //     e.preventDefault();
-    // }
-    let element = document.getElementById(id);
-    let wrap = getWrapped(element, fontsize);
+    const element = document.getElementById(id);
+    const wrap = getWrapped(element, fontsize);
     if (element) {
         let caret = getOffset(element);
         if (ctrl) {
-            let { start, end } = getSelectionOffsets(element);
-            let [ids, srange] = getCoverage(start, end, contents);
+            const { start, end } = getSelectionOffsets(element);
+            const [ids, srange] = getCoverage(start, end, contents);
             if (e.key == 'b') {
                 applyStyles(ids, 'bold', ids.length > 1 ? true : !contents[ids[0]].style.bold, srange);
             } else if (e.key == 'S') {
@@ -73,44 +80,34 @@ const keydown = (e) => {
         } else if (e.key == 'Control') {
             ctrl = true;
         } else if (e.key == 'ArrowUp') {
-            // TODO: implement cross section selection
-            if (shift) return;
-            let currLine = getCurrRow(caret, wrap);
+            const currLine = getCurrRow(caret, wrap);
             if (currLine == 1) {
                 dispatch('up', { index: caret })
             }
         } else if (e.key == 'ArrowDown') {
-            // TODO: implement cross section selection
-            if (shift) return;
-            let lines = wrap.length;
-            let currLine = getCurrRow(caret, wrap);
-            let lineIndex = getIndexFromOffset(caret, currLine);
+            const lines = wrap.length;
+            const currLine = getCurrRow(caret, wrap);
+            const lineIndex = getIndexFromOffset(caret, currLine);
             if (currLine == lines || (currLine == lines - 1 && lineIndex == 0 && caret != 0)) {
                 dispatch('down', { index: lineIndex })
             }
         } else if (e.key == 'ArrowRight') {
-            let len = lengths.reduce((p, a) => a + p, 0);
+            const len = lengths.reduce((p, a) => a + p, 0);
             if (caret == len) {
-                if (shift) {
-                    console.log('shifty right');
-                    // dispatch('shift-down', {type: 'right'});
-                } else {
+                if (!shift) {
                     dispatch('right');
                 }
             }
         } else if (e.key == 'ArrowLeft') {
-            let { start, end } = getSelectionOffsets(element);
+            const { start } = getSelectionOffsets(element);
             if (caret == 0 || (shift && start == 0)) {
-                if (shift) {
-                    console.log('shifty left');
-                    // dispatch('shift-down', {type: 'left'});
-                } else {
+                if (!shift) {
                     dispatch('left');
                 }
             }
         } else if (e.key == 'Backspace') {
-            let el2 = getActiveSpan(element);
-            let el2caret = getOffset(el2);
+            const el2 = getActiveSpan(element);
+            const el2caret = getOffset(el2);
             if (caret == 0) {
                 dispatch('delete', {
                     index: element.title, 
@@ -119,11 +116,11 @@ const keydown = (e) => {
                 if (element.textContent.trimEnd().length == 0) element.textContent = ' ';
                 return;
             }
-            // if (el2caret == 0) {
-            //     // @ts-ignore
-            //     dispatch('delete', { index: el2.title });
-            //     return;
-            // }
+            if (el2caret == 1) {
+                // @ts-ignore
+                contents.splice(el2.title, 1);
+                return;
+            }
         } else if (e.key == 'Tab') {
             e.preventDefault();
             e.stopPropagation();
@@ -133,14 +130,14 @@ const keydown = (e) => {
                 dispatch('tab', { direction: 1 });
             }
         } else if (e.key == 'Enter') {
-            let el2 = getActiveSpan(element);    
+            const el2 = getActiveSpan(element);    
             e.preventDefault();
             e.stopPropagation();
 
             if (el2) {
                 if (toolSelected) {
-                    let { start, end } = getSelectionOffsets(element);
-                    let [ids, srange] = getCoverage(start, end, contents);
+                    const { start, end } = getSelectionOffsets(element);
+                    const [ids, srange] = getCoverage(start, end, contents);
                     if (ids.length == 1) {
                         contents[ids[0]].content = contents[ids[0]].content.slice(0, srange[0]) + contents[ids[0]].content.slice(srange[1]);
                         if (contents[ids[0]].content.trimEnd() == '' && contents.length > 1) contents.splice(ids[0], 1);
@@ -162,10 +159,10 @@ const keydown = (e) => {
                     }
                     caret = ids.length > 1 ? 0 : srange[0];
                 }
-                let caret2 = getOffset(el2);
-                let bs = [];
+                const caret2 = getOffset(el2);
+                const bs = [];
                 let cutoff = 0;
-                let id = uuidv4();
+                const id = uuidv4();
                 if (caret == element.textContent.length || element.textContent.trimEnd().length == 0) {
                     bs.push({...contents[contents.length - 1]});
                     bs[0].id = id;
@@ -177,9 +174,8 @@ const keydown = (e) => {
                             cutoff = i;
                             bs.push({...contents[i]});
                             bs[0].id = id;
-                            let c = contents[i].content;
+                            const c = contents[i].content;
                             bs[0].content = c.substring(caret2).length > 0 ? c.substring(caret2) : ' ';
-                            // TODO: doesn't work properly cuz doesn't save text
                             contents[i].content = c.substring(0, caret2).length > 0 ? c.substring(0, caret2) : ' ';
                             el2.textContent = contents[i].content;
                         }
@@ -200,23 +196,21 @@ const keydown = (e) => {
 }
 
 const keyup = (e) => {
-    let element = document.getElementById(id);
+    const element = document.getElementById(id);
     if ((e.key == 'ArrowRight' || e.key == 'ArrowLeft' || e.key == 'ArrowUp' || e.key == 'ArrowDown')) {
         if (shift) {
-            let { start, end } = getSelectionOffsets(element);
-            let [ids, srange] = getCoverage(start, end, contents);
+            const { start, end } = getSelectionOffsets(element);
+            const [ids, srange] = getCoverage(start, end, contents);
             const rect = element.getBoundingClientRect();
-            let icons = document.getElementsByClassName('icons');
-            for (const icon of icons) {
-                // @ts-ignore
-                icon.style.visibility = 'hidden';
-            }
+            hideIcons();
             if (ids.length > 1) {
-                tool.openMenu(rect.top, rect.left, rect.bottom, undefined, [ids, srange], [start, end]);
+                tool.openMenu(rect.top, rect.left - 50, rect.bottom, undefined, [ids, srange], [start, end]);
+                linkSelected = undefined;
                 toolSelected = true;
                 // don't highlight style in toolbox
             } else if (ids.length == 1) {
-                tool.openMenu(rect.top, rect.left, rect.bottom, contents[ids[0]].style, [ids, srange], [start, end]);
+                tool.openMenu(rect.top, rect.left - 50, rect.bottom, contents[ids[0]].style, [ids, srange], [start, end]);
+                linkSelected = undefined;
                 toolSelected = true;
                 // highlight style in toolbox
             }
@@ -233,12 +227,9 @@ const keyup = (e) => {
             e.preventDefault();
             e.stopPropagation(); 
             const rect = element.getBoundingClientRect();
-            let icons = document.getElementsByClassName('icons');
-            for (const icon of icons) {
-                // @ts-ignore
-                icon.style.visibility = 'hidden';
-            }
+            hideIcons();
             menu.openMenu(rect.top, rect.left, rect.bottom);
+            linkSelected = undefined;
             selected = true;
         }
     } else if (e.key == ' ') {
@@ -258,24 +249,23 @@ let selectionIndices = undefined;
 const mouseup = (e, index) => {
     e.stopPropagation();
     e.preventDefault();
-    let element = document.getElementById(id);
-    let { start, end } = getSelectionOffsets(element);
+    const element = document.getElementById(id);
+    const { start, end } = getSelectionOffsets(element);
     if (start != end) selectionIndices = {start, end};
     if (start != end) {
-        let [ids, srange] = getCoverage(start, end, contents);
+        const [ids, srange] = getCoverage(start, end, contents);
+        console.log(start, end, srange)
         const rect = element.getBoundingClientRect();
-        let icons = document.getElementsByClassName('fa-plus');
-        for (const icon of icons) {
-            // @ts-ignore
-            icon.style.visibility = 'hidden';
-        }
+        hideIcons();
         if (ids.length > 1) {
-            tool.openMenu(rect.top, rect.left, rect.bottom, undefined, [ids, srange], [start, end], true);
+            tool.openMenu(rect.top, rect.left - 50, rect.bottom, undefined, [ids, srange], [start, end], true);
             toolSelected = true;
+            linkSelected = undefined;
             // don't highlight style in toolbox
         } else if (ids.length == 1) {
-            tool.openMenu(rect.top, rect.left, rect.bottom, contents[ids[0]].style, [ids, srange], [start, end], true);
+            tool.openMenu(rect.top, rect.left - 50, rect.bottom, contents[ids[0]].style, [ids, srange], [start, end], true);
             toolSelected = true;
+            linkSelected = undefined;
             // highlight style in toolbox
         }
     }
@@ -285,6 +275,8 @@ const blur = (e) => {
     if (!selectionIndices) return;
     e.preventDefault();
     e.stopPropagation();
+    return;
+    // TODO: fix
     const element = document.getElementById(id);
     if (element) {
         const selection = window.getSelection();
@@ -325,26 +317,18 @@ const blur = (e) => {
 }
 
 const input = (e) => {
-    let element = getActiveDiv();
+    const element = getActiveDiv();
     // @ts-ignore
     if (element && contents[element.title]) {
         // @ts-ignore
         if (element.textContent.trimEnd().length == 0) contents[element.title].content = ' ';
         else {
-            // TODO: fix weird behaviour this leads to
-            // contents[element.title].content = element.textContent.trimEnd();
-            // element.textContent = contents[element.title].content;
-        }
-    }
-}
-
-const focusSpan = (e) => {
-    const element = document.getElementById(id);
-    if (element.textContent.trimEnd().length == 0) {
-        if (contents.length == 0) console.error('contents empty')
-        const span = document.getElementById(contents[0].id);
-        if (span) {
-            span.focus()
+            const content = element.textContent.trimEnd();
+            const caret = getOffset(element);
+            // @ts-ignore
+            contents[element.title].content = content;
+            element.textContent = content;
+            focuspos(element, caret)            
         }
     }
 }
@@ -360,6 +344,7 @@ const addclick = (e) => {
             let bottom = rect.bottom;
             let left = rect.left;
             menu.openMenu(top, left, bottom);
+            linkSelected = undefined;
             selected = true;
         }
     }
@@ -369,30 +354,32 @@ const actionclick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (!actionSelected) {
-        let element = document.getElementById(`icon-${id}`);
+        const element = document.getElementById(`icon-${id}`);
         if (element) {
             const rect = element.getBoundingClientRect();
-            let top = rect.top;
-            let bottom = rect.bottom;
-            let left = rect.left;
+            const top = rect.top;
+            const bottom = rect.bottom;
+            const left = rect.left;
             action.openMenu(top, left, bottom);
+            linkSelected = undefined;
             actionSelected = true;
         }
     }
 }
 
 const applyStyles = (elements, attribute, value, srange) => {
+    console.log('hi', elements, attribute, value, srange)
     for (let j = elements.length - 1; j >= 0; j--) {
         const i = elements[j];
         if (i >= contents.length) console.error('toolcontroller id greater than length');
-        let newNode = JSON.parse(JSON.stringify(contents[i]));
-        let id = uuidv4();        
+        const newNode = JSON.parse(JSON.stringify(contents[i]));
+        const id = uuidv4();        
         newNode.id = id;
         newNode['style'][attribute] = value;  
         let merged = false;
+        const style1 = JSON.parse(JSON.stringify(contents[i].style));
         if (i < contents.length - 1 && contents.length > 1 && srange[1] == contents[i].content.length && (j == 0 || elements.length == 1)) {
-            let style2 = contents[i + 1].style;
-            let style1 = JSON.parse(JSON.stringify(contents[i].style));
+            const style2 = contents[i + 1].style;
             style1[attribute] = value;
             if (deepEqual(style1, style2)) {
                 contents[i + 1].content = contents[i].content.substring(srange[0]) + contents[i + 1].content;
@@ -405,8 +392,7 @@ const applyStyles = (elements, attribute, value, srange) => {
             }
         } 
         if (i >= 1 && contents.length > 1 && srange[0] == 0 && (j == elements.length - 1 || elements.length == 1)) {
-            let style2 = contents[i - 1].style;
-            let style1 = JSON.parse(JSON.stringify(contents[i].style));
+            const style2 = contents[i - 1].style;
             style1[attribute] = value;
             if (deepEqual(style1, style2)) {
                 contents[i - 1].content += contents[i].content.substring(0, srange[1]);
@@ -434,8 +420,8 @@ const applyStyles = (elements, attribute, value, srange) => {
             } else { // old + new + old
                 newNode.content = contents[i].content.substring(srange[0], srange[1]);
 
-                let oldNode = JSON.parse(JSON.stringify(contents[i]));
-                let id2 = uuidv4();        
+                const oldNode = JSON.parse(JSON.stringify(contents[i]));
+                const id2 = uuidv4();        
                 oldNode.id = id2;
                 oldNode.content = contents[i].content.substring(srange[1]);
 
@@ -476,6 +462,7 @@ const toolcontroller = (e) => {
         const value = e.detail.value;
         const [elements, srange] = e.detail.elements;     // elements that are being applied
         applyStyles(elements, subcontext, value, srange);
+        console.log('hi')
     } else if (context == 'transform') {
         if (subcontext == type) return;
         if (type != 'unordered' && type != 'ordered' && subcontext != 'unordered' && subcontext != 'ordered') {
@@ -506,6 +493,17 @@ const codeStyle = (index) => {
     }
 }
 
+let hover = false;
+const hoverTimerSet = () => {
+    hover = false;
+    setTimeout(() => {
+        if (hover) return;
+        else {
+            linkSelected = undefined;
+        }
+    }, 500);
+}
+
 const addElement = (e) => {
     dispatch('add', {
         type: e.detail.subcontext
@@ -531,17 +529,110 @@ $: {
     fontsize = FONTSIZE[type] ? FONTSIZE[type] : 16;
 }
 
-/**
- * contenteditable value binding:
-contenteditable="true"
-bind:textContent={content.content}        
-*/
+$: {
+    linkSelected;
+}
 
 </script>
 
 <ContextMenu bind:this={menu} menu={MENU} id={id} bind:selected={selected} selText={selText} on:empty={(e) => menu.onPageClick(e)} on:context={addElement}/>
 <ContextMenu bind:this={action} menu={ACTIONS} id={id} bind:selected={actionSelected} on:context={actionController} />
 <TextTool bind:this={tool} id={id} bind:selected={toolSelected} on:tool={(e) => toolcontroller(e)} />
+<Toasts />
+{#if linkSelected == 'hover'} 
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-mouse-events-have-key-events -->    
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<Slot>
+    <span class={`flex flex-row items-center justify-evenly border-2 rounded-md px-5 py-1`}
+        on:mouseover={() => {
+            hover = true;
+        }}
+        on:mouseleave={() => {
+            hoverTimerSet();
+        }}
+        style={`
+            border: 1px solid #d3d3d3;
+            background-color: white;
+            width: fit-content;
+            position: absolute; 
+            left: ${linkSelectInfo.x}px; 
+            top: ${linkSelectInfo.y}px;
+        `}>
+        <World theme={darkMode ? 'dark' : 'light'} />
+        <a class={`mx-5 w-fit`} target="_blank" href={linkSelectInfo.link}
+            style={`
+                color: #717171;
+                font-size: 15px;
+            `}>{linkSelectInfo.link}</a>
+        <span>
+            <i class="fa-regular fa-copy fa-ms link-icon" on:click={() => {
+                navigator.clipboard.writeText(linkSelectInfo.link);
+                addToast({ 
+                    message: 'copied!', 
+                    type: 'info', 
+                    dismissible: true, 
+                    timeout: 2000
+                })
+            }}></i>
+            <i class="fa-regular fa-pen-to-square fa-ms link-icon" on:click={() => {
+                linkSelected = 'edit';
+            }}></i>
+        </span>
+    </span>
+</Slot>
+{:else if linkSelected == 'edit'}
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-mouse-events-have-key-events -->    
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<Slot>
+    <span class={`flex flex-col items-center justify-evenly border-2 rounded-md px-5 py-1`}
+        on:mouseover={() => {
+            hover = true;
+        }}
+        on:mouseleave={() => {
+            hoverTimerSet();
+        }}
+        style={`
+            border: 1px solid #d3d3d3;
+            width: fit-content;
+            font-size: 15px;
+            position: absolute; 
+            background-color: white;
+            left: ${linkSelectInfo.x}px; 
+            top: ${linkSelectInfo.y}px;
+        `}>
+        <span class={`flex flex-col mt-2`}>
+            <p>URL</p>
+            <input placeholder="Input link" value={linkSelectInfo.link} 
+                class='link-input'
+                on:input={(e) => {
+                    contents[linkSelectInfo.index].style.link = e.target.value;
+                }}
+            />
+        </span>
+        <span class={`flex flex-col mt-2`}>
+            <p>Link text</p>
+            <input placeholder="Placement text" value={linkSelectInfo.text}
+                class='link-input'
+                on:input={(e) => {
+                    contents[linkSelectInfo.index].content = e.target.value;
+                }}
+            />
+        </span>
+        <span class={`flex flex-row items-center py-1 my-1 remove-link`}
+            on:click={() => {
+                contents[linkSelectInfo.index].style.link = undefined;
+                linkSelected = undefined;
+            }}>
+            <i class="fa-regular fa-trash-can"></i>
+            <p>Remove link</p>
+        </span>
+    </span>
+</Slot>
+{/if}
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <span class='flex flex-row flex-start hover:cursor-text cursor-text' >
@@ -558,7 +649,7 @@ bind:textContent={content.content}
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 {#if type != 'ordered' && type != 'unordered'}
 <div class='text-wrap break-all w-full'>
-<span id={id} class='hover:cursor-text cursor-text text-wrap break-all block' contenteditable="true" spellcheck="false" 
+<span id={id} class='hover:cursor-text cursor-text text-wrap break-all block whitespace-normal' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)} on:blur={blur}
 style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
         padding-left: ${tab ? (tab * 8) + 'px' : '0px'};
@@ -573,10 +664,9 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
                 ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
                 ${content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
                 editableSpan text-wrap break-all
-                whitespace-pre-wrap`} 
-        contenteditable="true"
+                whitespace-pre-wrap ${content.style.link ? 'link' : ''}`} 
         style={`
-            color: ${darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color}; 
+            color: ${content.style.link ? '#818181' : darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color}; 
             font-size: ${content.content.trimEnd().length > 0 && content.style.code ? fontsize - 2 : fontsize}px; 
             line-height: ${parseInt(fontsize) + 8}px;
             background-color: ${content.content.trimEnd().length > 0 && content.style.code ? darkMode ? '#4f5157' : '#dedede' : ''};
@@ -586,7 +676,30 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
             margin-left: 0px;
             padding: 0px;
         `} 
-        title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span>
+        title={index.toString()} id={content.id}><!--
+            -->{#if content.content.length != 0 && !content.style.code && !content.style.link}<!--
+                -->{content.content}<!--
+            -->{:else if content.content.length != 0 && content.style.code}<!--
+                --><code>{content.content}</code><!--
+            -->{:else if content.content.length != 0 && content.style.link}<!--
+                --><a href={content.style.link} contenteditable="false" target="_blank"
+                on:mouseenter={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    hover = true;
+                    let element = document.elementFromPoint(e.clientX, e.clientY);
+                    let rect = element.getBoundingClientRect();
+                    linkSelected = "hover";
+                    linkSelectInfo.index = index;
+                    linkSelectInfo.link = content.style.link;
+                    linkSelectInfo.text = content.content;
+                    linkSelectInfo.x = rect.left;
+                    linkSelectInfo.y = rect.bottom + 5;
+                }} on:mouseleave={() => {
+                    hoverTimerSet();
+                }}>{content.content}</a><!--
+            -->{/if}<!--
+        --></span>
     {/each}
 </span>
 </div>
@@ -597,26 +710,58 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
         margin-left: ${tab ? (tab * 4) + 'px' : '0px'} !important;
     `}>
 <span class='text-wrap break-all box-border block w-full'>
-<span id={id} class='hover:cursor-text cursor-text text-wrap break-all block' contenteditable="true" spellcheck="false" 
+    <span id={id} class='hover:cursor-text cursor-text text-wrap break-all block whitespace-normal' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)} on:blur={blur}
-style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;`}>
-    {#each contents as content, index}<span 
+style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
+        padding-left: ${tab ? (tab * 8) + 'px' : '0px'};
+        width: 100%;
+        display: block;
+`}>
+    {#each contents as content, index}
+    <span
         class={`${content.style.bold ? 'font-bold' : ''} 
                 ${content.style.italics ? 'italic' : ''} 
                 ${content.content.trimEnd().length > 0 && content.style.code ? codeStyle(index) : ''}
                 ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
                 ${content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
-                editableSpan text-wrap break-all overflow-hidden`} 
+                editableSpan text-wrap break-all
+                whitespace-pre-wrap ${content.style.link ? 'link' : ''}`} 
         style={`
-            color: ${darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color}; 
+            color: ${content.style.link ? '#818181' : darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color}; 
             font-size: ${content.content.trimEnd().length > 0 && content.style.code ? fontsize - 2 : fontsize}px; 
-            background-color: ${content.content.trimEnd().length > 0 && content.style.code ? darkMode ? '#4f5157' : '#dedede' : ''};
             line-height: ${parseInt(fontsize) + 8}px;
+            background-color: ${content.content.trimEnd().length > 0 && content.style.code ? darkMode ? '#4f5157' : '#dedede' : ''};
             border-color: ${darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color};
             -webkit-box-decoration-break: clone;
             box-decoration-break: clone;
-        `}  
-        title={index.toString()} id={content.id}>{#if content.content.length != 0 && !content.style.code}{content.content}{/if}{#if content.content.length != 0 && content.style.code}<code>{content.content}</code>{/if}</span>{/each}
+            margin-left: 0px;
+            padding: 0px;
+        `} 
+        title={index.toString()} id={content.id}><!--
+            -->{#if content.content.length != 0 && !content.style.code && !content.style.link}<!--
+                -->{content.content}<!--
+            -->{:else if content.content.length != 0 && content.style.code}<!--
+                --><code>{content.content}</code><!--
+            -->{:else if content.content.length != 0 && content.style.link}<!--
+                --><a href={content.style.link} contenteditable="false" target="_blank"
+                on:mouseenter={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    hover = true;
+                    let element = document.elementFromPoint(e.clientX, e.clientY);
+                    let rect = element.getBoundingClientRect();
+                    linkSelected = "hover";
+                    linkSelectInfo.index = index;
+                    linkSelectInfo.link = content.style.link;
+                    linkSelectInfo.text = content.content;
+                    linkSelectInfo.x = rect.left;
+                    linkSelectInfo.y = rect.bottom + 5;
+                }} on:mouseleave={() => {
+                    hoverTimerSet();
+                }}>{content.content}</a><!--
+            -->{/if}<!--
+        --></span>
+    {/each}
 </span>
 </span>
 </li>
@@ -632,6 +777,10 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;`}>
     margin-right: 10px;
     color: #b1b1b1 !important;
     opacity: 0;
+}
+
+.link:hover {
+    cursor: pointer !important;
 }
 
 i {
@@ -677,6 +826,26 @@ i {
 li {
     list-style-position: outside !important;
     width: 100%;
+}
+
+.link-icon {
+    cursor: pointer;
+    color: #818181;
+    padding: 5px;
+    border-radius: 3px;
+    margin-right: 0px;
+}
+
+.link-icon:hover {
+    background-color: #e1e1e1;
+}
+
+.remove-link:hover {
+    background-color: #f1f1f1;
+    width: 100%;
+    justify-content: center;
+    border-radius: 3px;
+    cursor: pointer;
 }
 
 </style>
