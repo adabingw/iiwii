@@ -240,7 +240,23 @@ export const MENU = [
             'name': 'ordered', 
             'displayText': 'Number list', 
             'class': 'fa-solid fa-list-ol fa-xs fa-fw'
-        }
+        }, {
+            'name': 'quote', 
+            'displayText': 'Quote', 
+            'class': 'fa-solid fa-quote-right fa-xs fa-fw',
+            'unavailable': true
+        }, {
+            'name': 'toggle', 
+            'displayText': 'Toggle', 
+            'class': 'fa-solid fa-circle-dot fa-xs fa-fw',
+            'unavailable': true
+        },
+        {
+            'name': 'checkbox', 
+            'displayText': 'Checkbox', 
+            'class': 'fa-regular fa-square-check fa-xs fa-fw',
+            'unavailable': true
+        },
         ]
     }, 
 ]
@@ -305,7 +321,7 @@ export const TOOL = [
             'class': 'fa-solid fa-code fa-xs fa-fw'
         }, {
             'name': 'link', 
-            'shortcut': 'Ctrl + k',
+            'shortcut': '',
             'displayText': 'link', 
             'class': 'fa-solid fa-link fa-xs fa-fw'
         }

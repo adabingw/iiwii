@@ -110,7 +110,7 @@ const keydown = (e) => {
             const el2caret = getOffset(el2);
             if (caret == 0) {
                 dispatch('delete', {
-                    index: element.title, 
+                    index: element.dataset.title, 
                     text: element.textContent.trimEnd().length > 0 ? contents : undefined
                 });
                 if (element.textContent.trimEnd().length == 0) element.textContent = ' ';
@@ -118,7 +118,7 @@ const keydown = (e) => {
             }
             if (el2caret == 1) {
                 // @ts-ignore
-                contents.splice(el2.title, 1);
+                contents.splice(el2.dataset.title, 1);
                 return;
             }
         } else if (e.key == 'Tab') {
@@ -251,10 +251,9 @@ const mouseup = (e, index) => {
     e.preventDefault();
     const element = document.getElementById(id);
     const { start, end } = getSelectionOffsets(element);
-    if (start != end) selectionIndices = {start, end};
     if (start != end) {
+        selectionIndices = {start, end};
         const [ids, srange] = getCoverage(start, end, contents);
-        console.log(start, end, srange)
         const rect = element.getBoundingClientRect();
         hideIcons();
         if (ids.length > 1) {
@@ -319,14 +318,14 @@ const blur = (e) => {
 const input = (e) => {
     const element = getActiveDiv();
     // @ts-ignore
-    if (element && contents[element.title]) {
+    if (element && contents[element.dataset.title]) {
         // @ts-ignore
-        if (element.textContent.trimEnd().length == 0) contents[element.title].content = ' ';
+        if (element.textContent.trimEnd().length == 0) contents[element.dataset.title].content = ' ';
         else {
             const content = element.textContent.trimEnd();
             const caret = getOffset(element);
             // @ts-ignore
-            contents[element.title].content = content;
+            contents[element.dataset.title].content = content;
             element.textContent = content;
             focuspos(element, caret)            
         }
@@ -368,7 +367,6 @@ const actionclick = (e) => {
 }
 
 const applyStyles = (elements, attribute, value, srange) => {
-    console.log('hi', elements, attribute, value, srange)
     for (let j = elements.length - 1; j >= 0; j--) {
         const i = elements[j];
         if (i >= contents.length) console.error('toolcontroller id greater than length');
@@ -462,7 +460,6 @@ const toolcontroller = (e) => {
         const value = e.detail.value;
         const [elements, srange] = e.detail.elements;     // elements that are being applied
         applyStyles(elements, subcontext, value, srange);
-        console.log('hi')
     } else if (context == 'transform') {
         if (subcontext == type) return;
         if (type != 'unordered' && type != 'ordered' && subcontext != 'unordered' && subcontext != 'ordered') {
@@ -501,7 +498,7 @@ const hoverTimerSet = () => {
         else {
             linkSelected = undefined;
         }
-    }, 500);
+    }, 100);
 }
 
 const addElement = (e) => {
@@ -529,10 +526,6 @@ $: {
     fontsize = FONTSIZE[type] ? FONTSIZE[type] : 16;
 }
 
-$: {
-    linkSelected;
-}
-
 </script>
 
 <ContextMenu bind:this={menu} menu={MENU} id={id} bind:selected={selected} selText={selText} on:empty={(e) => menu.onPageClick(e)} on:context={addElement}/>
@@ -553,8 +546,8 @@ $: {
             hoverTimerSet();
         }}
         style={`
-            border: 1px solid #d3d3d3;
-            background-color: white;
+            border: 1px solid ${darkMode ? '#919191' : '#d3d3d3'};
+            background-color: ${darkMode ? '#515151' : 'white'};
             width: fit-content;
             position: absolute; 
             left: ${linkSelectInfo.x}px; 
@@ -563,20 +556,20 @@ $: {
         <World theme={darkMode ? 'dark' : 'light'} />
         <a class={`mx-5 w-fit`} target="_blank" href={linkSelectInfo.link}
             style={`
-                color: #717171;
+                color: ${darkMode? '#c9c9c9' : '#717171'};
                 font-size: 15px;
             `}>{linkSelectInfo.link}</a>
         <span>
-            <i class="fa-regular fa-copy fa-ms link-icon" on:click={() => {
+            <i class={`fa-regular fa-copy fa-ms link-icon-${darkMode ? 'dark' : 'light'}`} on:click={() => {
                 navigator.clipboard.writeText(linkSelectInfo.link);
-                addToast({ 
+                addToast({
                     message: 'copied!', 
                     type: 'info', 
                     dismissible: true, 
                     timeout: 2000
                 })
             }}></i>
-            <i class="fa-regular fa-pen-to-square fa-ms link-icon" on:click={() => {
+            <i class={`fa-regular fa-pen-to-square fa-ms link-icon-${darkMode ? 'dark' : 'light'}`} on:click={() => {
                 linkSelected = 'edit';
             }}></i>
         </span>
@@ -596,18 +589,19 @@ $: {
             hoverTimerSet();
         }}
         style={`
-            border: 1px solid #d3d3d3;
+            color: ${darkMode ? '#e2e2e2' : '#818181'};
+            border: 1px solid ${darkMode ? '#919191' : '#d3d3d3'};
+            background-color: ${darkMode ? '#515151' : 'white'};
             width: fit-content;
             font-size: 15px;
             position: absolute; 
-            background-color: white;
             left: ${linkSelectInfo.x}px; 
             top: ${linkSelectInfo.y}px;
         `}>
         <span class={`flex flex-col mt-2`}>
             <p>URL</p>
             <input placeholder="Input link" value={linkSelectInfo.link} 
-                class='link-input'
+                class={`link-input-${darkMode ? 'dark' : 'light'}`}
                 on:input={(e) => {
                     contents[linkSelectInfo.index].style.link = e.target.value;
                 }}
@@ -616,13 +610,13 @@ $: {
         <span class={`flex flex-col mt-2`}>
             <p>Link text</p>
             <input placeholder="Placement text" value={linkSelectInfo.text}
-                class='link-input'
+                class={`link-input-${darkMode ? 'dark' : 'light'}`}
                 on:input={(e) => {
                     contents[linkSelectInfo.index].content = e.target.value;
                 }}
             />
         </span>
-        <span class={`flex flex-row items-center py-1 my-1 remove-link`}
+        <span class={`flex flex-row items-center py-1 my-1 remove-link-${darkMode ? 'dark' : 'light'}`}
             on:click={() => {
                 contents[linkSelectInfo.index].style.link = undefined;
                 linkSelected = undefined;
@@ -647,65 +641,9 @@ $: {
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-{#if type != 'ordered' && type != 'unordered'}
-<div class='text-wrap break-all w-full'>
-<span id={id} class='hover:cursor-text cursor-text text-wrap break-all block whitespace-normal' contenteditable="true" spellcheck="false" 
-on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)} on:blur={blur}
-style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
-        padding-left: ${tab ? (tab * 8) + 'px' : '0px'};
-        width: 100%;
-        display: block;
-`}>
-    {#each contents as content, index}
-    <span
-        class={`${content.style.bold ? 'font-bold' : ''} 
-                ${content.style.italics ? 'italic' : ''} 
-                ${content.content.trimEnd().length > 0 && content.style.code ? codeStyle(index) : ''}
-                ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
-                ${content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
-                editableSpan text-wrap break-all
-                whitespace-pre-wrap ${content.style.link ? 'link' : ''}`} 
-        style={`
-            color: ${content.style.link ? '#818181' : darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color}; 
-            font-size: ${content.content.trimEnd().length > 0 && content.style.code ? fontsize - 2 : fontsize}px; 
-            line-height: ${parseInt(fontsize) + 8}px;
-            background-color: ${content.content.trimEnd().length > 0 && content.style.code ? darkMode ? '#4f5157' : '#dedede' : ''};
-            border-color: ${darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color};
-            -webkit-box-decoration-break: clone;
-            box-decoration-break: clone;
-            margin-left: 0px;
-            padding: 0px;
-        `} 
-        title={index.toString()} id={content.id}><!--
-            -->{#if content.content.length != 0 && !content.style.code && !content.style.link}<!--
-                -->{content.content}<!--
-            -->{:else if content.content.length != 0 && content.style.code}<!--
-                --><code>{content.content}</code><!--
-            -->{:else if content.content.length != 0 && content.style.link}<!--
-                --><a href={content.style.link} contenteditable="false" target="_blank"
-                on:mouseenter={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    hover = true;
-                    let element = document.elementFromPoint(e.clientX, e.clientY);
-                    let rect = element.getBoundingClientRect();
-                    linkSelected = "hover";
-                    linkSelectInfo.index = index;
-                    linkSelectInfo.link = content.style.link;
-                    linkSelectInfo.text = content.content;
-                    linkSelectInfo.x = rect.left;
-                    linkSelectInfo.y = rect.bottom + 5;
-                }} on:mouseleave={() => {
-                    hoverTimerSet();
-                }}>{content.content}</a><!--
-            -->{/if}<!--
-        --></span>
-    {/each}
-</span>
-</div>
-{:else}
 <li class={`hover:cursor-text cursor-text`} 
     style={`
+        list-style-type: ${type == 'unordered' || type == 'ordered' ? '' : 'none'};
         color: ${darkMode ? '#f8f8f8' : '#000000'};
         margin-left: ${tab ? (tab * 4) + 'px' : '0px'} !important;
     `}>
@@ -719,25 +657,27 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
 `}>
     {#each contents as content, index}
     <span
-        class={`${content.style.bold ? 'font-bold' : ''} 
-                ${content.style.italics ? 'italic' : ''} 
-                ${content.content.trimEnd().length > 0 && content.style.code ? codeStyle(index) : ''}
-                ${content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
-                ${content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
+        class={`${!content.style.link && content.style.bold ? 'font-bold' : ''} 
+                ${!content.style.link && content.style.italics ? 'italic' : ''} 
+                ${!content.style.link && content.content.trimEnd().length > 0 && content.style.code ? codeStyle(index) : ''}
+                ${!content.style.link && content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
+                ${content.style.link ? 'underline' : ''}
+                ${!content.style.link && content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
                 editableSpan text-wrap break-all
                 whitespace-pre-wrap ${content.style.link ? 'link' : ''}`} 
         style={`
-            color: ${content.style.link ? '#818181' : darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color}; 
+            text-underline-offset: ${content.style.link ? '0.2em' : ''};
+            color: ${content.style.link ? 
+                darkMode ? '#c2c2c2' : '#818181' : 
+                darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color}; 
             font-size: ${content.content.trimEnd().length > 0 && content.style.code ? fontsize - 2 : fontsize}px; 
             line-height: ${parseInt(fontsize) + 8}px;
             background-color: ${content.content.trimEnd().length > 0 && content.style.code ? darkMode ? '#4f5157' : '#dedede' : ''};
             border-color: ${darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color};
             -webkit-box-decoration-break: clone;
             box-decoration-break: clone;
-            margin-left: 0px;
-            padding: 0px;
         `} 
-        title={index.toString()} id={content.id}><!--
+        data-title={index.toString()} id={content.id}><!--
             -->{#if content.content.length != 0 && !content.style.code && !content.style.link}<!--
                 -->{content.content}<!--
             -->{:else if content.content.length != 0 && content.style.code}<!--
@@ -765,7 +705,6 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
 </span>
 </span>
 </li>
-{/if}
 </span>
 
 <style>
@@ -794,8 +733,8 @@ i {
 .code {
     padding-top: 0.1em;
     padding-bottom: 0.1em;
-    padding-right: 0.3em;
-    padding-left: 0.3em;
+    padding-right: 0.5em;
+    padding-left: 0.5em;
     border-radius: 5px;
 }
 
@@ -828,7 +767,7 @@ li {
     width: 100%;
 }
 
-.link-icon {
+.link-icon-light {
     cursor: pointer;
     color: #818181;
     padding: 5px;
@@ -836,12 +775,32 @@ li {
     margin-right: 0px;
 }
 
-.link-icon:hover {
+.link-icon-light:hover {
     background-color: #e1e1e1;
 }
 
-.remove-link:hover {
+.link-icon-dark {
+    cursor: pointer;
+    color: #e2e2e2;
+    padding: 5px;
+    border-radius: 3px;
+    margin-right: 0px;
+}
+
+.link-icon-dark:hover {
+    background-color: #818181;
+}
+
+.remove-link-light:hover {
     background-color: #f1f1f1;
+    width: 100%;
+    justify-content: center;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.remove-link-dark:hover {
+    background-color: #717171;
     width: 100%;
     justify-content: center;
     border-radius: 3px;

@@ -304,7 +304,7 @@ export const focusElement = (id) => {
 
 // hide icons when contextmenu
 export const hideIcons = () => {
-    const icons = document.getElementsByClassName('fa-plus');
+    const icons = document.getElementsByClassName('icons');
     for (const icon of icons) {
         // @ts-ignore
         icon.style.visibility = 'hidden';

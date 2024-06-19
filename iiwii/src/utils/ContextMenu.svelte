@@ -49,7 +49,7 @@ export const openMenu = (top_, left_, bottom_) => {
     top = top_;
     left = left_;
     bottom = bottom_;
-    if (top < 250) {
+    if (top < 300) {
         style = `position: absolute; top:${top + 30}px; left:${left}px; z-index: 1;`
     } else {
         style = `position: absolute; bottom:${window.innerHeight - bottom + 25}px; left:${left}px; z-index: 1;`
@@ -85,7 +85,10 @@ $: {
                 {#if item.items}
                 {#each item.items as i}
                 {#if i.displayText.toLowerCase().includes(selText.toLowerCase())}
-                    <li on:click={() => menuClick(item.name, i.name)}>
+                    <li on:click={() => {
+                        if (i.unavailable) return;
+                        menuClick(item.name, i.name);
+                    }}>
                         <i class={`${i.class}`}></i>
                         {i.displayText}
                     </li>

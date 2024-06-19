@@ -1,7 +1,7 @@
 <script>
 import { createEventDispatcher } from 'svelte';
 import { clickOutside, hideIcons } from './utils.js';
-import { TOOL } from './constants';
+import { MENU, TOOL } from './constants';
 import ContextMenu from './ContextMenu.svelte';
 import { tooltip } from "@svelte-plugins/tooltips";
 import ColorPicker from 'svelte-awesome-color-picker';
@@ -92,6 +92,7 @@ export const onPageClick = (e) => {
             value: linkText
         })
     }
+    showLink = false;
     selected = false;
     returnPage();
     dispatch('close')
@@ -146,8 +147,9 @@ const isDisabled = (style, name) => {
     <Slot>
         <span class={`flex flex-row items-center justify-evenly border-2 rounded-md px-5 py-1`}
             style={`
-                border: 1px solid #d3d3d3;
-                background-color: white;
+                color: ${darkMode ? '#e2e2e2' : '#818181'};
+                border: 1px solid ${darkMode ? '#919191' : '#d3d3d3'};
+                background-color: ${darkMode ? '#515151' : 'white'};
                 width: 350px;
                 min-width: fit-content;
                 position: absolute; 
@@ -158,11 +160,11 @@ const isDisabled = (style, name) => {
                 padding-left: 10px;
                 padding-right: 10px;
             `}>
-            <input class='link-input' bind:value={linkText} placeholder="Paste link"/>
+            <input class={`link-input-${darkMode ? 'dark' : 'light'}`} bind:value={linkText} placeholder="Paste link"/>
         </span>
     </Slot>
     {/if}
-    <ContextMenu bind:this={menu} id={id} on:context={(e) => contextController(e)}/>
+    <ContextMenu bind:this={menu} id={id} on:context={(e) => contextController(e)} menu={MENU}/>
     <div class={`navbar navbar-${darkMode ? 'dark' : 'light'} overflow-hidden`} id="navbar">
             {#each TOOL as item, index}
                 {#if item.items}
