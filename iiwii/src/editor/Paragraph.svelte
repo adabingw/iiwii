@@ -604,7 +604,9 @@ $: {
                 })
             }}></i>
             <i class={`fa-regular fa-pen-to-square fa-ms link-icon-${darkMode ? 'dark' : 'light'}`} on:click={() => {
-                linkSelected = 'edit';
+                if (!selected && !actionSelected && !toolSelected) {
+                    linkSelected = 'edit';
+                }
             }}></i>
         </span>
     </span>
@@ -726,7 +728,9 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
                     hover = true;
                     let element = document.elementFromPoint(e.clientX, e.clientY);
                     let rect = element.getBoundingClientRect();
-                    linkSelected = "hover";
+                    if (!selected && !actionSelected && !toolSelected) {
+                        linkSelected = 'hover';
+                    }
                     linkSelectInfo.index = index;
                     linkSelectInfo.link = content.style.link;
                     linkSelectInfo.text = content.content;

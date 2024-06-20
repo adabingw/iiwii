@@ -256,6 +256,12 @@ export const MENU = [
             'class': 'fa-regular fa-square-check fa-xs fa-fw',
             'unavailable': true
         },
+        {
+            'name': 'callout', 
+            'displayText': 'Callout', 
+            'class': 'fa-regular fa-lightbulb fa-xs fa-fw',
+            'unavailable': true
+        },
         ]
     }, 
 ]
