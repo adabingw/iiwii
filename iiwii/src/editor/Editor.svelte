@@ -285,15 +285,8 @@ const transformElement = (e, type, index) => {
             content: new_b
         });
     } else {
-        const id = uuidv4();
-        const new_content = JSON.parse(JSON.stringify(blocks[index]));
-        new_content.type = 'text';
-        blocks[index] = {
-            type: to, 
-            id: id,
-            tab: t,
-            content: [new_content]
-        }
+        blocks[index].type = to;
+        focusElement(blocks[index].content[0].id);
     }
     blocks = [...blocks]
 }
@@ -302,7 +295,7 @@ const transformElement = (e, type, index) => {
 
 <div class="px-72 pt-10" id='breh'>
 {#each blocks as item, index}
-    {#if item.type == 'text' || item.type == 'h1' || item.type == 'h2' || item.type == 'h3'}
+    {#if item.type == 'text' || item.type == 'h1' || item.type == 'h2' || item.type == 'h3' || item.type == 'quote'}
         <Paragraph id={item.id} bind:contents={item.content} tab={item.tab == undefined ? 0 : item.tab}
             bind:type={item.type} on:transform={(e) => transformElement(e, item.type, index)}
             on:enter={(e) => enterPresed(e, index, 'text')}

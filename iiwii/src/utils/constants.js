@@ -40,7 +40,7 @@ export const setup = [
         ]
     },
     {
-        type: 'text',
+        type: 'quote',
         id: '5bb9b175-ae25-4999-be06-575391d732ef',
         tab: 0,
         content: [
@@ -244,7 +244,6 @@ export const MENU = [
             'name': 'quote', 
             'displayText': 'Quote', 
             'class': 'fa-solid fa-quote-right fa-xs fa-fw',
-            'unavailable': true
         }, {
             'name': 'toggle', 
             'displayText': 'Toggle', 

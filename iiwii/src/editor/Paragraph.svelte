@@ -13,7 +13,10 @@ import {
     deepEqual,
     getActiveDiv,
     hideIcons,
-    focuspos
+    focuspos,
+
+    focusElement
+
 } from '../utils/utils';
 import { adjustBrightnessToLight } from '../utils/colors';
 import {v4 as uuidv4} from 'uuid';
@@ -116,10 +119,24 @@ const keydown = (e) => {
                 if (element.textContent.trimEnd().length == 0) element.textContent = ' ';
                 return;
             }
-            if (el2caret == 1) {
-                // @ts-ignore
-                contents.splice(el2.dataset.title, 1);
+            if (el2caret == 1 && el2.textContent.length == 1) {
+                if (contents.length > 1) {
+                    // @ts-ignore
+                    contents.splice(el2.dataset.title, 1);
+                } else {
+                    // @ts-ignore
+                    contents[el2.dataset.title].content = ' ';
+                    el2.textContent = ' '
+                    e.preventDefault();
+                } 
+                contents = [...contents];
+                focusElement(contents[0].id)
                 return;
+            }
+            if (el2.textContent[0] == '\n') {
+                // @ts-ignore
+                contents[el2.dataset.title].content = contents[el2.dataset.title].content.substring(1);
+                focuspos(el2, 0);
             }
         } else if (e.key == 'Tab') {
             e.preventDefault();
@@ -185,6 +202,13 @@ const keydown = (e) => {
                         }
                     }
                     if (cutoff < contents.length - 2) contents.splice(cutoff + 1);
+                    if (shift) {
+                        bs[0].content = '\n' + bs[0].content;
+                        contents.push(...bs);
+                        contents = [...contents];
+                        focusElement(bs[0].id);
+                        return;
+                    }
                 }
                 contents = [...contents];
                 dispatch('enter', { 
@@ -274,8 +298,6 @@ const blur = (e) => {
     if (!selectionIndices) return;
     e.preventDefault();
     e.stopPropagation();
-    return;
-    // TODO: fix
     const element = document.getElementById(id);
     if (element) {
         const selection = window.getSelection();
@@ -320,7 +342,9 @@ const input = (e) => {
     // @ts-ignore
     if (element && contents[element.dataset.title]) {
         // @ts-ignore
-        if (element.textContent.trimEnd().length == 0) contents[element.dataset.title].content = ' ';
+        if (element.textContent.trimEnd().length == 0) {
+            contents[element.dataset.title].content = ' ';
+        } 
         else {
             const content = element.textContent.trimEnd();
             const caret = getOffset(element);
@@ -502,6 +526,16 @@ const hoverTimerSet = () => {
 }
 
 const addElement = (e) => {
+    if (selText || document.getElementById(id) && document.getElementById(id).textContent.trimEnd().trimStart() == '/') {
+        contents[0].content = ' ';
+        contents = [...contents]
+        selText = "";
+        dispatch('transform', {
+            from: type,
+            to: e.detail.subcontext
+        })
+        return;
+    }
     dispatch('add', {
         type: e.detail.subcontext
     })
@@ -651,9 +685,10 @@ $: {
     <span id={id} class='hover:cursor-text cursor-text text-wrap break-all block whitespace-normal' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)} on:blur={blur}
 style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
-        padding-left: ${tab ? (tab * 8) + 'px' : '0px'};
         width: 100%;
         display: block;
+        padding-left: ${type == 'quote' ? '15px' : ''};
+        border-left: ${type == 'quote' ? darkMode ? '2.5px solid #dfdfdf' : '2.5px solid #313131' : ''};
 `}>
     {#each contents as content, index}
     <span
@@ -677,6 +712,7 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
             -webkit-box-decoration-break: clone;
             box-decoration-break: clone;
         `} 
+        contenteditable="true"
         data-title={index.toString()} id={content.id}><!--
             -->{#if content.content.length != 0 && !content.style.code && !content.style.link}<!--
                 -->{content.content}<!--
