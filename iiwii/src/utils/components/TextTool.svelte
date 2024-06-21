@@ -1,14 +1,14 @@
 <script>
 import { createEventDispatcher } from 'svelte';
-import { clickOutside, hideIcons } from './utils.js';
-import { MENU, TOOL } from './constants';
+import { clickOutside, hideIcons } from '../scripts/utils.js';
+import { MENU, TOOL } from '../scripts/constants';
 import ContextMenu from './ContextMenu.svelte';
 import { tooltip } from "@svelte-plugins/tooltips";
 import ColorPicker from 'svelte-awesome-color-picker';
 import Wrapper from './Wrapper.svelte';
-import { dark } from './store.js';
-import { adjustBrightnessToDark } from './colors.js';
-  import Slot from './Slot.svelte';
+import { dark, menuState } from '../store.js';
+import { adjustBrightnessToDark } from '../scripts/colors.js';
+import Slot from './Slot.svelte';
 
 export let id;
 export let selected;
@@ -35,6 +35,7 @@ const returnPage = () => {
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'auto';
     selected = false;
+    menuState.set(false);
     let icons = document.getElementsByClassName('icons');
     for (const icon of icons) {
         // @ts-ignore
@@ -113,6 +114,7 @@ export const openMenu = (top_, left_, bottom_, textStyle_, index_, range_, flagF
         style = `position: absolute; bottom:${window.innerHeight - top + 15}px; left:${left}px; z-index: 1;`
     }
     showMenu = true;
+    menuState.set(true);
 }
 
 const contextController = (e) => {

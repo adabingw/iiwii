@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 export const dark = writable(false);
+export const menuState = writable(false);
 
 export const toasts = writable([]);
 

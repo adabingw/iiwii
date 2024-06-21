@@ -1,7 +1,7 @@
 <script>
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { dark, addToast } from '../utils/store';
+import { dark, menuState, addToast } from '../utils/store';
 import { 
     getActiveSpan, 
     getOffset, 
@@ -14,26 +14,27 @@ import {
     getActiveDiv,
     hideIcons,
     focuspos,
-
     focusElement
-
-} from '../utils/utils';
-import { adjustBrightnessToLight } from '../utils/colors';
+} from '../utils/scripts/utils';
+import { adjustBrightnessToLight } from '../utils/scripts/colors';
 import {v4 as uuidv4} from 'uuid';
-import ContextMenu from '../utils/ContextMenu.svelte';
-import TextTool from '../utils/TextTool.svelte';
-import { ACTIONS, FONTSIZE, MENU } from '../utils/constants';
-import Slot from '../utils/Slot.svelte';
+import ContextMenu from '../utils/components/ContextMenu.svelte';
+import TextTool from '../utils/components/TextTool.svelte';
+import { ACTIONS, FONTSIZE, MENU } from '../utils/scripts/constants';
+import Slot from '../utils/components/Slot.svelte';
 import World from '../utils/assets/WORLD.svelte';
-import Toasts from '../utils/Toasts.svelte';
+import Toasts from '../utils/components/Toasts.svelte';
 
 export let contents = [];
 export let id;
 export let type = 'text';
 export let tab = 0;
+export let state = false;
 
 let darkMode = false;
 let subscribe = dark.subscribe((value) => darkMode = value);
+let menuOpen = false;
+let subscribeMenu = menuState.subscribe((value) => menuOpen = value);
 let fontsize = FONTSIZE[type] ? FONTSIZE[type] : 16;
 let selText = '';
 let menu;
@@ -96,7 +97,8 @@ const keydown = (e) => {
             }
         } else if (e.key == 'ArrowRight') {
             const len = lengths.reduce((p, a) => a + p, 0);
-            if (caret == len) {
+            console.log(caret, len)
+            if (caret == len + 1) {
                 if (!shift) {
                     dispatch('right');
                 }
@@ -111,7 +113,8 @@ const keydown = (e) => {
         } else if (e.key == 'Backspace') {
             const el2 = getActiveSpan(element);
             const el2caret = getOffset(el2);
-            if (caret == 0) {
+            console.log(caret, el2caret)
+            if (caret == 1 || caret == 0) {
                 dispatch('delete', {
                     index: element.dataset.title, 
                     text: element.textContent.trimEnd().length > 0 ? contents : undefined
@@ -257,7 +260,7 @@ const keyup = (e) => {
             selected = true;
         }
     } else if (e.key == ' ') {
-        if (element && element.textContent.trimEnd() == '*') {
+        if (element && element.textContent.trimEnd().trimStart() == '*') {
             dispatch('unordered')
         } else if (element && !isNaN(parseInt(element.textContent.trimEnd().slice(0, -1))) && !/\s/g.test(element.textContent.trimEnd().slice(0, -1))) {
             dispatch('ordered', { start: parseInt(element.textContent.trimEnd().slice(0, -1))})
@@ -341,8 +344,8 @@ const input = (e) => {
     const element = getActiveDiv();
     // @ts-ignore
     if (element && contents[element.dataset.title]) {
-        // @ts-ignore
         if (element.textContent.trimEnd().length == 0) {
+            // @ts-ignore
             contents[element.dataset.title].content = ' ';
         } 
         else {
@@ -547,6 +550,18 @@ const actionController = (e) => {
     })
 }
 
+const hoverStyle = () => {
+    return `
+            color: ${darkMode ? '#e2e2e2' : '#818181'};
+            border: 1px solid ${darkMode ? '#919191' : '#d3d3d3'};
+            background-color: ${darkMode ? '#515151' : 'white'};
+            width: fit-content;
+            position: absolute; 
+            left: ${linkSelectInfo.x}px; 
+            top: ${linkSelectInfo.y}px;
+        `
+}
+
 $: {
     contents;
     lengths = [];
@@ -566,109 +581,77 @@ $: {
 <ContextMenu bind:this={action} menu={ACTIONS} id={id} bind:selected={actionSelected} on:context={actionController} />
 <TextTool bind:this={tool} id={id} bind:selected={toolSelected} on:tool={(e) => toolcontroller(e)} />
 <Toasts />
-{#if linkSelected == 'hover'} 
+{#if linkSelected != undefined} 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-mouse-events-have-key-events -->    
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <Slot>
     <span class={`flex flex-row items-center justify-evenly border-2 rounded-md px-5 py-1`}
-        on:mouseover={() => {
-            hover = true;
-        }}
-        on:mouseleave={() => {
-            hoverTimerSet();
-        }}
-        style={`
-            border: 1px solid ${darkMode ? '#919191' : '#d3d3d3'};
-            background-color: ${darkMode ? '#515151' : 'white'};
-            width: fit-content;
-            position: absolute; 
-            left: ${linkSelectInfo.x}px; 
-            top: ${linkSelectInfo.y}px;
-        `}>
-        <World theme={darkMode ? 'dark' : 'light'} />
-        <a class={`mx-5 w-fit`} target="_blank" href={linkSelectInfo.link}
-            style={`
-                color: ${darkMode? '#c9c9c9' : '#717171'};
-                font-size: 15px;
-            `}>{linkSelectInfo.link}</a>
-        <span>
-            <i class={`fa-regular fa-copy fa-ms link-icon-${darkMode ? 'dark' : 'light'}`} on:click={() => {
-                navigator.clipboard.writeText(linkSelectInfo.link);
-                addToast({
-                    message: 'copied!', 
-                    type: 'info', 
-                    dismissible: true, 
-                    timeout: 2000
-                })
-            }}></i>
-            <i class={`fa-regular fa-pen-to-square fa-ms link-icon-${darkMode ? 'dark' : 'light'}`} on:click={() => {
-                if (!selected && !actionSelected && !toolSelected) {
-                    linkSelected = 'edit';
-                }
-            }}></i>
-        </span>
-    </span>
-</Slot>
-{:else if linkSelected == 'edit'}
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<!-- svelte-ignore a11y-mouse-events-have-key-events -->    
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<Slot>
-    <span class={`flex flex-col items-center justify-evenly border-2 rounded-md px-5 py-1`}
-        on:mouseover={() => {
-            hover = true;
-        }}
-        on:mouseleave={() => {
-            hoverTimerSet();
-        }}
-        style={`
-            color: ${darkMode ? '#e2e2e2' : '#818181'};
-            border: 1px solid ${darkMode ? '#919191' : '#d3d3d3'};
-            background-color: ${darkMode ? '#515151' : 'white'};
-            width: fit-content;
-            font-size: 15px;
-            position: absolute; 
-            left: ${linkSelectInfo.x}px; 
-            top: ${linkSelectInfo.y}px;
-        `}>
-        <span class={`flex flex-col mt-2`}>
-            <p>URL</p>
-            <input placeholder="Input link" value={linkSelectInfo.link} 
-                class={`link-input-${darkMode ? 'dark' : 'light'}`}
-                on:input={(e) => {
-                    contents[linkSelectInfo.index].style.link = e.target.value;
-                }}
-            />
-        </span>
-        <span class={`flex flex-col mt-2`}>
-            <p>Link text</p>
-            <input placeholder="Placement text" value={linkSelectInfo.text}
-                class={`link-input-${darkMode ? 'dark' : 'light'}`}
-                on:input={(e) => {
-                    contents[linkSelectInfo.index].content = e.target.value;
-                }}
-            />
-        </span>
-        <span class={`flex flex-row items-center py-1 my-1 remove-link-${darkMode ? 'dark' : 'light'}`}
-            on:click={() => {
-                contents[linkSelectInfo.index].style.link = undefined;
-                linkSelected = undefined;
-            }}>
-            <i class="fa-regular fa-trash-can"></i>
-            <p>Remove link</p>
-        </span>
+        on:mouseover={() => hover = true }
+        on:mouseleave={() =>  hoverTimerSet() }
+        style={`${hoverStyle()} ${linkSelected == 'edit' ? 'font-size: 15px; ' : ''}`}>
+        {#if linkSelected == 'hover'} 
+            <World theme={darkMode ? 'dark' : 'light'} />
+            <a class={`mx-5 w-fit`} target="_blank" href={linkSelectInfo.link}
+                style={`
+                    color: ${darkMode? '#c9c9c9' : '#717171'};
+                    font-size: 15px;
+                `}>{linkSelectInfo.link}</a>
+            <span>
+                <i class={`fa-regular fa-copy fa-ms link-icon-${darkMode ? 'dark' : 'light'}`} on:click={() => {
+                    navigator.clipboard.writeText(linkSelectInfo.link);
+                    addToast({
+                        message: 'copied!', 
+                        type: 'info', 
+                        dismissible: true, 
+                        timeout: 2000
+                    })
+                }}></i>
+                <i class={`fa-regular fa-pen-to-square fa-ms link-icon-${darkMode ? 'dark' : 'light'}`} on:click={() => {
+                    if (!selected && !actionSelected && !toolSelected && !menuOpen) {
+                        linkSelected = 'edit';
+                    }
+                }}></i>
+            </span>
+        {:else if linkSelected == 'edit'}
+            <span class={`flex flex-col justify-center items-center`}>
+                <span class={`flex flex-col mt-2`}>
+                    <p>URL</p>
+                    <input placeholder="Input link" value={linkSelectInfo.link} 
+                        class={`link-input-${darkMode ? 'dark' : 'light'}`}
+                        on:input={(e) => {
+                            contents[linkSelectInfo.index].style.link = e.target.value;
+                        }}
+                    />
+                </span>
+                <span class={`flex flex-col mt-2`}>
+                    <p>Link text</p>
+                    <input placeholder="Placement text" value={linkSelectInfo.text}
+                        class={`link-input-${darkMode ? 'dark' : 'light'}`}
+                        on:input={(e) => {
+                            contents[linkSelectInfo.index].content = e.target.value;
+                        }}
+                    />
+                </span>
+                <span class={`flex flex-row items-center py-1 my-1 remove-link-${darkMode ? 'dark' : 'light'}`}
+                    on:click={() => {
+                        contents[linkSelectInfo.index].style.link = undefined;
+                        linkSelected = undefined;
+                    }}>
+                    <i class="fa-regular fa-trash-can"></i>
+                    <p>Remove link</p>
+                </span>
+            </span>
+        {/if}
     </span>
 </Slot>
 {/if}
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<span class='flex flex-row flex-start hover:cursor-text cursor-text' >
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<!-- svelte-ignore a11y-click-events-have-key-events -->
 
+<span class='flex flex-row flex-start hover:cursor-text cursor-text' >
+    
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <span id={`icon-${id}`} class={`icons ${selected || actionSelected ? 'selected' : ''}`} 
     style={`line-height: ${parseInt(fontsize) + 8}px; height: ${parseInt(fontsize) + 8}px;`}>
     <i class={`fa-solid fa-plus fa-ms`}  on:click={addclick} ></i>
@@ -683,22 +666,38 @@ $: {
         color: ${darkMode ? '#f8f8f8' : '#000000'};
         margin-left: ${tab ? (tab * 4) + 'px' : '0px'} !important;
     `}>
-<span class='text-wrap break-all box-border block w-full'>
+<span class='text-wrap break-all box-border w-full flex flex-row items-center'>
+    {#if type == 'checkbox'}
+        <input type="checkbox" bind:value={state} 
+            style={`accent-color: ${darkMode ? '#e2e2e2' : '#515151'};
+                    background-color: ${darkMode ? '#2e3036' : 'white'};
+                    border: 1px solid ${darkMode ? 'white' : '#2e3036'};
+                    margin-right: 10px;
+            `} />
+    {/if}
     <span id={id} class='hover:cursor-text cursor-text text-wrap break-all block whitespace-normal' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)} on:blur={blur}
 style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
         width: 100%;
         display: block;
-        padding-left: ${type == 'quote' ? '15px' : ''};
+        padding-left: ${type == 'quote' || type == 'callout' ? '15px' : ''};
         border-left: ${type == 'quote' ? darkMode ? '2.5px solid #dfdfdf' : '2.5px solid #313131' : ''};
+        background-color: ${type == 'callout' ? darkMode ? '#515151' : '#e2e2e2' : ''};
+        padding-top: ${type == 'callout' ? '10px' : ''};
+        padding-bottom: ${type == 'callout' ? '10px' : ''};
+        margin-top: ${type == 'callout' ? '7px' : ''};
+        margin-bottom: ${type == 'callout' ? '7px' : ''};
 `}>
+    {#if type == 'callout'}
+        <i class="fa-regular fa-lightbulb"></i>
+    {/if}
     {#each contents as content, index}
     <span
         class={`${!content.style.link && content.style.bold ? 'font-bold' : ''} 
                 ${!content.style.link && content.style.italics ? 'italic' : ''} 
                 ${!content.style.link && content.content.trimEnd().length > 0 && content.style.code ? codeStyle(index) : ''}
                 ${!content.style.link && content.content.trimEnd().length > 0 && content.style.strikethrough ? 'line-through' : ''}
-                ${content.style.link ? 'underline' : ''}
+                ${content.style.link && content.content.trimEnd().length > 0 ? 'underline' : ''}
                 ${!content.style.link && content.content.trimEnd().length > 0 && content.style.underline ? 'border-b-2' : ''} 
                 editableSpan text-wrap break-all
                 whitespace-pre-wrap ${content.style.link ? 'link' : ''}`} 
@@ -708,7 +707,7 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
                 darkMode ? '#c2c2c2' : '#818181' : 
                 darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color}; 
             font-size: ${content.content.trimEnd().length > 0 && content.style.code ? fontsize - 2 : fontsize}px; 
-            line-height: ${parseInt(fontsize) + 8}px;
+            line-height: ${parseInt(fontsize) + 12}px;
             background-color: ${content.content.trimEnd().length > 0 && content.style.code ? darkMode ? '#4f5157' : '#dedede' : ''};
             border-color: ${darkMode ? adjustBrightnessToLight(content.style.color) : content.style.color};
             -webkit-box-decoration-break: clone;
@@ -721,14 +720,14 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
             -->{:else if content.content.length != 0 && content.style.code}<!--
                 --><code>{content.content}</code><!--
             -->{:else if content.content.length != 0 && content.style.link}<!--
-                --><a href={content.style.link} contenteditable="false" target="_blank"
+                --><a href={content.style.link} target="_blank"
                 on:mouseenter={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
                     hover = true;
                     let element = document.elementFromPoint(e.clientX, e.clientY);
                     let rect = element.getBoundingClientRect();
-                    if (!selected && !actionSelected && !toolSelected) {
+                    if (!selected && !actionSelected && !toolSelected && !menuOpen) {
                         linkSelected = 'hover';
                     }
                     linkSelectInfo.index = index;

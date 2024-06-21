@@ -1,8 +1,8 @@
 <script>
-import { setup } from "../utils/constants";
+import { setup } from "../utils/scripts/constants";
 import {v4 as uuidv4} from 'uuid';
 import Paragraph from "./Paragraph.svelte";
-import { focusElement, focusEnd, focuspos, getOffset, getOffsetFromIndex, getWrapped } from "../utils/utils";
+import { createBlock, createContent, createListBlock, focusElement, focusEnd, getOffsetFromIndex, getWrapped } from "../utils/scripts/utils";
 import List from "./List.svelte";
 
 let blocks = setup;
@@ -10,13 +10,9 @@ let blocks = setup;
 const enterPresed = (e, index, type) => {
     const id = uuidv4();
     const bs = e.detail.blocks;
-    if (bs.length == 0) console.error('blocks empty')
-    blocks.splice(index + 1, 0, {
-        type: type,
-        id: id, 
-        content: bs,
-        tab: blocks[index].tab ? blocks[index].tab : 0
-    })
+    if (bs.length == 0) console.error('blocks empty');
+    const tab = blocks[index].tab ? blocks[index].tab : 0;
+    blocks.splice(index + 1, 0, createBlock(id, type, tab, false, bs))
     blocks = [...blocks]
     focusElement(bs[0].id);
 }
@@ -25,26 +21,9 @@ const addElement = (e, index) => {
     const type = e.detail.type;
     const id = uuidv4();
     const id2 = uuidv4();
-    blocks.splice(index + 1, 0, {
-        type: type,
-        id: id,
-        tab: blocks[index].tab ? blocks[index].tab : 0,
-        content: [
-            {
-                content: ' ',
-                id: id2,
-                style: {
-                    'bold': false, 
-                    'italics': false,
-                    'underline': false,
-                    'code': false,
-                    'strikethrough': false,
-                    'color': '#000000',
-                    'link': undefined
-                }
-            },
-        ]
-    })
+    const tab = blocks[index].tab ? blocks[index].tab : 0;
+    const content = createContent(id2, ' ');
+    blocks.splice(index + 1, 0, createBlock(id, type, tab, false, [content]))
     blocks = [...blocks]
 }
 
@@ -86,48 +65,41 @@ const actionController = (e, index) => {
 const textEnter = (e, index, type) => {
     const i = e.detail.index;
     const id = uuidv4();
+    let insertAt = index;
     if (i == blocks[index].content.length - 1) {
-        const [new_content] = blocks[index]['content'].splice(i, 1);
         if (blocks[index]['content'].length != 0) {
-            // @ts-ignore
-            blocks.splice(index + 1, 0, new_content);   
-        } else {
-            // @ts-ignore
-            blocks.splice(index, 0, new_content);   
+            insertAt = index + 1;  
         }
-        focusElement(new_content.id);
-    } else if (i == 0) {
-        const [new_content] = blocks[index]['content'].splice(0, 1);
-        // @ts-ignore
-        blocks.splice(index, 0, new_content);
-        focusElement(new_content.id);
     } else {
-        let new_b = blocks[index]['content'].splice(i);
-        const [new_content] = new_b.splice(0, 1);
-        // @ts-ignore
-        blocks.splice(index + 1, 0, new_content);
-        focusElement(new_content.id);
-        // @ts-ignore
-        blocks.splice(index + 2, 0, {
-            type: type,
-            id: id, 
-            content: new_b
-        });
+        let new_b = blocks[index]['content'].splice(i + 1);
+        insertAt = index + 1;
+        blocks.splice(index + 1, 0, createBlock(id, type, blocks[index].tab ? blocks[index].tab : 0, false, new_b));
     }
+    const [new_content] = blocks[index]['content'].splice(i, 1);
+    blocks.splice(insertAt, 0, createBlock(
+        new_content.id,
+        new_content.type,
+        blocks[index].tab ? blocks[index].tab : 0,
+        false,
+        new_content.content
+    ));
+    focusElement(new_content.id);
     blocks = [...blocks]
 }
 
 const ondelete = (e, index) => {
-    const i = parseInt(e.detail.index);
     const content = e.detail.text;
     // backspace on an element that isn't empty should append that element to the previous element
+    console.log(content)
     if (content) {
         if (index < 1) return;
         let id;
         if (blocks[index - 1].type == 'unordered' || blocks[index - 1].type == 'ordered') {
             let c = blocks[index - 1].content;
-            // @ts-ignore
-            c[c.length - 1].content.push(...content);
+            if (Array.isArray(c[c.length - 1].content)) {
+                // @ts-ignore
+                c[c.length - 1].content.push(...content);
+            }
             id = c[c.length - 1].id;
         } else {
             blocks[index - 1].content.push(...content)
@@ -149,9 +121,7 @@ const ondelete = (e, index) => {
             } else {
                 id = blocks[index - 1].id;
             }
-            if (index > 0) {
-                focusElement(id);
-            }
+            if (index > 0) focusElement(id);
         }
     }
     blocks = [...blocks]
@@ -182,11 +152,8 @@ const updown = (e, index, direction) => {
             if (lines > 1) {
                 pos = getOffsetFromIndex(pos, wrap);
             }
-            if (pos >= len) {
-                focusEnd(block);
-            } else {
-                focusEnd(block);
-            }
+            if (pos >= len) focusEnd(block);
+            else focusEnd(block);
         }
     } else if (direction == 'down') {
         if (index == blocks.length - 1) return;
@@ -199,9 +166,7 @@ const updown = (e, index, direction) => {
             block = document.getElementById(blocks[index + 1].id.toString());
         }
 
-        if (block) {
-            focusEnd(block)
-        }
+        if (block) focusEnd(block)
     }
 }
 
@@ -216,9 +181,7 @@ const leftright = (index, direction) => {
         } else {
             block = document.getElementById(blocks[index - 1].id.toString());
         }
-        if (block) {
-            focusEnd(block);
-        }
+        if (block) focusEnd(block);
     } else {
         if (index == blocks.length - 1) return;
         let block;
@@ -229,9 +192,7 @@ const leftright = (index, direction) => {
         } else {
             block = document.getElementById(blocks[index + 1].id.toString());
         }
-        if (block) {
-            block.focus();
-        }
+        if (block) block.focus();
     }
 }
 
@@ -239,17 +200,19 @@ const makeList = (e, type, index) => {
     e.preventDefault();
     const id = uuidv4();
     const content = {...blocks[index]};
-    const id2 = content.id;
     for (let i = 0; i < content.content.length; i++) {
         if (i == 0) content.content[i].content = ' ';
         else content.content[i].content = '';
     }
     if (type == 'ordered' && e.detail.start) blocks[index].start = e.detail.start;
-    blocks[index].type = type;
-    blocks[index].id = id;
-    // @ts-ignore
-    blocks[index].content = [content];
-    focusElement(id2);
+    blocks[index] = createBlock(
+        id, 
+        type, 
+        blocks[index].tab ? blocks[index].tab : 0, 
+        false, 
+        [ createListBlock(content.id, content.type, content.content) ]
+    )
+    focusElement(content.id);
 }
 
 const transformElement = (e, type, index) => {
@@ -263,27 +226,19 @@ const transformElement = (e, type, index) => {
         let new_b = blocks[index]['content'].splice(i);
         const [new_content] = new_b.splice(0, 1);
         new_content.type = to;
-        if (to == 'h1' || to == 'h2' || to == 'h3' || to == 'text') {
-            // @ts-ignore
-            blocks.splice(index + 1, 0, new_content);
+        if (to != 'ordered' && to != 'unordered') {
+            blocks.splice(index + 1, 0, createBlock(
+                new_content.id, 
+                to,
+                blocks[index].tab ? blocks[index].tab : 0,
+                false, 
+                new_content.content
+            ));
             focusElement(new_content.id);   
         } else {
-            // @ts-ignore
-            blocks.splice(index + 1, 0, {
-                type: to,
-                id: id, 
-                tab: t,
-                // @ts-ignore
-                content: [new_content]
-            });
+            blocks.splice(index + 1, 0, createBlock(id, to, t, false, [new_content]));
         }
-        // @ts-ignore
-        blocks.splice(index + 2, 0, {
-            type: type,
-            id: id, 
-            tab: t,
-            content: new_b
-        });
+        blocks.splice(index + 2, 0, createBlock(id, type, t, false, new_b));
     } else {
         blocks[index].type = to;
         focusElement(blocks[index].content[0].id);
@@ -295,9 +250,11 @@ const transformElement = (e, type, index) => {
 
 <div class="px-72 pt-10" id='breh'>
 {#each blocks as item, index}
-    {#if item.type == 'text' || item.type == 'h1' || item.type == 'h2' || item.type == 'h3' || item.type == 'quote'}
+    {#if item.type == 'text' || item.type == 'h1' || item.type == 'h2' || item.type == 'h3' || 
+        item.type == 'quote' || item.type == 'callout' || item.type == 'checkbox'}
         <Paragraph id={item.id} bind:contents={item.content} tab={item.tab == undefined ? 0 : item.tab}
-            bind:type={item.type} on:transform={(e) => transformElement(e, item.type, index)}
+            bind:state={item.state} bind:type={item.type} 
+            on:transform={(e) => transformElement(e, item.type, index)}
             on:enter={(e) => enterPresed(e, index, 'text')}
             on:delete={(e) => ondelete(e, index)} on:tab={(e) => tab(e, index)}
             on:ordered={(e) => makeList(e, 'ordered', index)} on:unordered={(e) => makeList(e, 'unordered', index)} 

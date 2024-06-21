@@ -1,7 +1,7 @@
 <script>
 import { createEventDispatcher } from 'svelte';
-import { clickOutside } from './utils.js';
-import { dark } from './store.js';
+import { clickOutside } from '../scripts/utils.js';
+import { dark, menuState } from '../store.js';
 
 export let id;
 export let selected = false;
@@ -13,7 +13,6 @@ let bottom;
 let showMenu = false;
 let style = "";
 let darkMode = false;
-
 const subscribe = dark.subscribe((value) => darkMode = value);
 const dispatch = createEventDispatcher();
 
@@ -30,6 +29,7 @@ const returnPage = () => {
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'auto';
     selected = false;
+    menuState.set(false);
     let icons = document.getElementsByClassName('icons');
     for (const icon of icons) {
         // @ts-ignore
@@ -55,6 +55,7 @@ export const openMenu = (top_, left_, bottom_) => {
         style = `position: absolute; bottom:${window.innerHeight - bottom + 25}px; left:${left}px; z-index: 1;`
     }
     showMenu = true;
+    menuState.set(true);
 }
 
 $: {

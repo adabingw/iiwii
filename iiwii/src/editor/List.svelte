@@ -1,7 +1,7 @@
 <script>
 
 import { createEventDispatcher, onMount } from 'svelte';
-import { focuspos, getWrapped, focusEnd, getOffsetFromIndex, focusElement } from '../utils/utils';
+import { focuspos, getWrapped, focusEnd, getOffsetFromIndex, focusElement } from '../utils/scripts/utils';
 import {v4 as uuidv4} from 'uuid';
 import Paragraph from './Paragraph.svelte';
 

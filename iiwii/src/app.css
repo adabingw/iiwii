@@ -97,3 +97,21 @@ ol {
 input::placeholder {
     font-size: 15px;
 }
+
+input[type="checkbox"], input[type="radio"] {
+    width: 1em;
+    height: 1em;
+}
+
+input[type="checkbox"] {
+    border-radius: 2px;
+}
+
+input[type="radio"] {
+    border-radius: 100px;
+}
+
+input[type="checkbox"]:not(:checked):not(:disabled),
+input[type="radio"]:not(:checked):not(:disabled) {
+    appearance: none;
+}

@@ -3,6 +3,7 @@ export const setup = [
         type: 'h1',
         id: '9e7bc2a7-885d-46aa-9a1e-c1673a25ed28',
         tab: 0,
+        state: false,
         content: [
             {
                 content: 'welcome to iiwii (it is what it is)',
@@ -20,9 +21,31 @@ export const setup = [
         ]
     },
     {
-        type: 'h2',
+        type: 'callout',
         id: '6c923ecb-302a-4778-b4fd-b5112e8bbc26',
         tab: 0,
+        state: false,
+        content: [
+            {
+                content: 'This is a Header 2',
+                id: 'c976fc36-b110-4e53-8988-eebbe8990a33',
+                style: {
+                    'bold': false, 
+                    'italics': false,
+                    'underline': false,
+                    'code': false,
+                    'strikethrough': false,
+                    'color': '#000000',
+                    'link': undefined,
+                }
+            }
+        ]
+    },
+    {
+        type: 'checkbox',
+        id: '3c7f6098-1e19-43b7-89aa-d354f366c8e9',
+        tab: 0,
+        state: false,
         content: [
             {
                 content: 'This is a Header 2',
@@ -43,6 +66,7 @@ export const setup = [
         type: 'quote',
         id: '5bb9b175-ae25-4999-be06-575391d732ef',
         tab: 0,
+        state: false,
         content: [
             {
                 content: 'And this is a Header 3',
@@ -63,6 +87,7 @@ export const setup = [
         type: 'text',
         id: 'c32d8b45-92fe-44f6-8b61-42c2107dfe87',
         tab: 0,
+        state: false,
         content: [
             {
                 content: 'this is text ',
@@ -97,6 +122,7 @@ export const setup = [
         start: 3,
         id: 'a10f7afb-bda3-4395-8da4-121a24e4677e',
         tab: 0,
+        state: false,
         content: [
             {
                 type: 'text',
@@ -244,24 +270,17 @@ export const MENU = [
             'name': 'quote', 
             'displayText': 'Quote', 
             'class': 'fa-solid fa-quote-right fa-xs fa-fw',
-        }, {
-            'name': 'toggle', 
-            'displayText': 'Toggle', 
-            'class': 'fa-solid fa-circle-dot fa-xs fa-fw',
-            'unavailable': true
         },
         {
             'name': 'checkbox', 
             'displayText': 'Checkbox', 
             'class': 'fa-regular fa-square-check fa-xs fa-fw',
-            'unavailable': true
         },
         {
             'name': 'callout', 
             'displayText': 'Callout', 
             'class': 'fa-regular fa-lightbulb fa-xs fa-fw',
-            'unavailable': true
-        },
+        }
         ]
     }, 
 ]

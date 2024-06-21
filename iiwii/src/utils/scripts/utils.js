@@ -312,3 +312,41 @@ export const hideIcons = () => {
     let body = document.getElementById('homepage');
     if (body) body.style.overflowY = 'hidden';
 }
+
+export const createBlock = (id, type, tab, state, content) => {
+    return {
+        id: id, 
+        type: type, 
+        tab: tab, 
+        state: state,
+        content: content    // array of objects
+    }
+}
+
+export const createListBlock = (id, type, content) => {
+    return {
+        id: id, 
+        type: type, 
+        content: content    // array of objects
+    }
+}
+
+export const createContent = (id, content, style = createStyle()) => {
+    return {
+        id: id, 
+        content: content,   // string
+        style: style
+    }
+}
+
+export const createStyle = (bold = false, italics = false, underline = false, strikethrough = false, color = "#000000", link = undefined) => {
+    return {
+        'bold': bold, 
+        'italics': italics,
+        'underline': underline,
+        'code': code,
+        'strikethrough': strikethrough,
+        'color': color,
+        'link': link
+    }
+}
