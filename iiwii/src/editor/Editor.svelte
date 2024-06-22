@@ -248,7 +248,7 @@ const transformElement = (e, type, index) => {
 
 </script>
 
-<div class="px-72 pt-10" id='breh'>
+<div class="px-72 py-10" id='breh'>
 {#each blocks as item, index}
     {#if item.type == 'text' || item.type == 'h1' || item.type == 'h2' || item.type == 'h3' || 
         item.type == 'quote' || item.type == 'callout' || item.type == 'checkbox'}

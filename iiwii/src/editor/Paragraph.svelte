@@ -79,6 +79,12 @@ const keydown = (e) => {
             }
         }
 
+        if (e.key == ' ') {
+            console.log('aaa')
+            const el2 = getActiveSpan(element);
+            console.log(el2)
+        }
+
         if (e.key == 'Shift') {
             shift = true;
         } else if (e.key == 'Control') {
@@ -97,7 +103,6 @@ const keydown = (e) => {
             }
         } else if (e.key == 'ArrowRight') {
             const len = lengths.reduce((p, a) => a + p, 0);
-            console.log(caret, len)
             if (caret == len + 1) {
                 if (!shift) {
                     dispatch('right');
@@ -113,7 +118,6 @@ const keydown = (e) => {
         } else if (e.key == 'Backspace') {
             const el2 = getActiveSpan(element);
             const el2caret = getOffset(el2);
-            console.log(caret, el2caret)
             if (caret == 1 || caret == 0) {
                 dispatch('delete', {
                     index: element.dataset.title, 
@@ -341,15 +345,15 @@ const blur = (e) => {
 }
 
 const input = (e) => {
-    const element = getActiveDiv();
+    const el = document.getElementById(id);
+    const element = getActiveSpan(el);
     // @ts-ignore
     if (element && contents[element.dataset.title]) {
         if (element.textContent.trimEnd().length == 0) {
             // @ts-ignore
             contents[element.dataset.title].content = ' ';
-        } 
-        else {
-            const content = element.textContent.trimEnd();
+        } else {
+            const content = element.textContent;
             const caret = getOffset(element);
             // @ts-ignore
             contents[element.dataset.title].content = content;
@@ -666,7 +670,18 @@ $: {
         color: ${darkMode ? '#f8f8f8' : '#000000'};
         margin-left: ${tab ? (tab * 4) + 'px' : '0px'} !important;
     `}>
-<span class='text-wrap break-all box-border w-full flex flex-row items-center'>
+<span class='text-wrap break-all box-border w-full flex flex-row items-center'
+    style={`
+        padding-left: ${type == 'quote' || type == 'callout' ? '15px' : ''};
+        padding-right: ${type == 'quote' || type == 'callout' ? '15px' : ''};
+        border-left: ${type == 'quote' ? darkMode ? '2.5px solid #dfdfdf' : '2.5px solid #313131' : ''};
+        background-color: ${type == 'callout' ? darkMode ? '#515151' : '#e2e2e2' : ''};
+        padding-top: ${type == 'callout' || type == 'quote' ? '10px' : ''};
+        padding-bottom: ${type == 'callout' || type == 'quote' ? '10px' : ''};
+        margin-top: ${type == 'callout' || type == 'quote' ? '7px' : ''};
+        margin-bottom: ${type == 'callout' || type == 'quote' ? '7px' : ''};
+    `}
+>
     {#if type == 'checkbox'}
         <input type="checkbox" bind:value={state} 
             style={`accent-color: ${darkMode ? '#e2e2e2' : '#515151'};
@@ -675,22 +690,15 @@ $: {
                     margin-right: 10px;
             `} />
     {/if}
+    {#if type == 'callout'}
+        <i class="fa-regular fa-lightbulb"></i>
+    {/if}
     <span id={id} class='hover:cursor-text cursor-text text-wrap break-all block whitespace-normal' contenteditable="true" spellcheck="false" 
 on:keydown={keydown} on:keyup={keyup} on:input={(e) => input(e)} on:mouseup={(e) => mouseup(e)} on:blur={blur}
 style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
         width: 100%;
         display: block;
-        padding-left: ${type == 'quote' || type == 'callout' ? '15px' : ''};
-        border-left: ${type == 'quote' ? darkMode ? '2.5px solid #dfdfdf' : '2.5px solid #313131' : ''};
-        background-color: ${type == 'callout' ? darkMode ? '#515151' : '#e2e2e2' : ''};
-        padding-top: ${type == 'callout' ? '10px' : ''};
-        padding-bottom: ${type == 'callout' ? '10px' : ''};
-        margin-top: ${type == 'callout' ? '7px' : ''};
-        margin-bottom: ${type == 'callout' ? '7px' : ''};
 `}>
-    {#if type == 'callout'}
-        <i class="fa-regular fa-lightbulb"></i>
-    {/if}
     {#each contents as content, index}
     <span
         class={`${!content.style.link && content.style.bold ? 'font-bold' : ''} 
@@ -725,16 +733,17 @@ style={`line-height: 18px; border-right: solid rgba(0,0,0,0) 1px;
                     e.stopPropagation();
                     e.preventDefault();
                     hover = true;
-                    let element = document.elementFromPoint(e.clientX, e.clientY);
+                    let element = document.elementFromPoint(e.pageX - window.scrollX, e.pageY - window.scrollY);
                     let rect = element.getBoundingClientRect();
                     if (!selected && !actionSelected && !toolSelected && !menuOpen) {
                         linkSelected = 'hover';
                     }
+                    console.log(element.offsetTop, document.body.scrollTop)
                     linkSelectInfo.index = index;
                     linkSelectInfo.link = content.style.link;
                     linkSelectInfo.text = content.content;
                     linkSelectInfo.x = rect.left;
-                    linkSelectInfo.y = rect.bottom + 5;
+                    linkSelectInfo.y = element.offsetTop ? element.offsetTop + 25 : rect.bottom + 25;
                 }} on:mouseleave={() => {
                     hoverTimerSet();
                 }}>{content.content}</a><!--

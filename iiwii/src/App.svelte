@@ -39,6 +39,6 @@ onMount(() => {
 }
 
 .main-light {
-background-color: white;
+    background-color: white;
 }
 </style>

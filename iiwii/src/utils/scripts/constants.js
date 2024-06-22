@@ -21,17 +21,98 @@ export const setup = [
         ]
     },
     {
+        type: 'h2',
+        id: 'b01d41da-80e5-48f4-a1b1-02f811ee0cdb',
+        tab: 0,
+        state: false,
+        content: [
+            {
+                content: 'a rich text editor',
+                id: 'fed2882d-d1b0-43ef-8c1d-861e6ee278bf',
+                style: {
+                    'bold': false, 
+                    'italics': true,
+                    'underline': false,
+                    'code': false,
+                    'strikethrough': false,
+                    'color': '#000000',
+                    'link': undefined,
+                }
+            }
+        ]
+    },
+    {
+        type: 'h3',
+        id: '9fc10171-5de6-4670-9256-3fdd318569d4',
+        tab: 0,
+        state: false,
+        content: [
+            {
+                content: 'maybe you wanna use different headings (this is h3)',
+                id: 'fed2882d-d1b0-43ef-8c1d-861e6ee278bf',
+                style: {
+                    'bold': true, 
+                    'italics': false,
+                    'underline': false,
+                    'code': false,
+                    'strikethrough': false,
+                    'color': '#000000',
+                    'link': undefined,
+                }
+            }
+        ]
+    },
+    {
         type: 'callout',
         id: '6c923ecb-302a-4778-b4fd-b5112e8bbc26',
         tab: 0,
         state: false,
         content: [
             {
-                content: 'This is a Header 2',
+                content: 'Make your writing ',
                 id: 'c976fc36-b110-4e53-8988-eebbe8990a33',
                 style: {
                     'bold': false, 
                     'italics': false,
+                    'underline': false,
+                    'code': false,
+                    'strikethrough': false,
+                    'color': '#000000',
+                    'link': undefined,
+                }
+            },
+            {
+                content: 'stand out',
+                id: '0536cfa7-78d1-43d6-80c7-f0a4e829bdd3',
+                style: {
+                    'bold': false, 
+                    'italics': false,
+                    'underline': false,
+                    'code': false,
+                    'strikethrough': false,
+                    'color': '#c73a7c',
+                    'link': undefined,
+                }
+            },
+            {
+                content: ' with a ',
+                id: '4e19a320-6769-4bde-808d-88ff634fd140',
+                style: {
+                    'bold': false, 
+                    'italics': false,
+                    'underline': false,
+                    'code': false,
+                    'strikethrough': false,
+                    'color': '#000000',
+                    'link': undefined,
+                }
+            },
+            {
+                content: 'Callout',
+                id: 'af708d48-be14-47ca-b9fa-00d61244d41e',
+                style: {
+                    'bold': true, 
+                    'italics': true,
                     'underline': false,
                     'code': false,
                     'strikethrough': false,
@@ -48,7 +129,7 @@ export const setup = [
         state: false,
         content: [
             {
-                content: 'This is a Header 2',
+                content: 'Track your tasks with todo lists',
                 id: 'c976fc36-b110-4e53-8988-eebbe8990a33',
                 style: {
                     'bold': false, 
@@ -69,15 +150,28 @@ export const setup = [
         state: false,
         content: [
             {
-                content: 'And this is a Header 3',
+                content: 'Capture it, ',
                 id: '5520d83e-0b96-423a-a90b-1ecbaffb9714',
+                style: {
+                    'bold': false, 
+                    'italics': false,
+                    'underline': false,
+                    'code': false,
+                    'strikethrough': false,
+                    'color': '#000000',
+                    'link': undefined,
+                }
+            },
+            {
+                content: 'remember it',
+                id: 'f3d4547f-a420-4241-a690-b793eddfa8fc',
                 style: {
                     'bold': false, 
                     'italics': false,
                     'underline': true,
                     'code': false,
-                    'strikethrough': true,
-                    'color': '#000000',
+                    'strikethrough': false,
+                    'color': '#347d4b',
                     'link': undefined,
                 }
             }
@@ -90,7 +184,7 @@ export const setup = [
         state: false,
         content: [
             {
-                content: 'this is text ',
+                content: 'you can also ',
                 id: 'fd80b3fc-1c73-4433-979d-d6c140727467',
                 style: {
                     'bold': false, 
@@ -99,11 +193,11 @@ export const setup = [
                     'code': false,
                     'strikethrough': false,
                     'color': '#000000',
-                    'link': 'www.reddit.com',
+                    'link': undefined,
                 }
             },
             {
-                content: 'that could be formatted differently',
+                content: 'style and format these text differently',
                 id: '8beb2661-d206-4404-aefb-0cb9b63d46d8',
                 style: {
                     'bold': true, 
@@ -149,7 +243,7 @@ export const setup = [
                             'italics': false,
                             'underline': true,
                             'code': false,
-                            'strikethrough': false,
+                            'strikethrough': true,
                             'color': '#8c709c',
                             'link': undefined,
                         }
@@ -180,8 +274,21 @@ export const setup = [
                 id: 'a121db05-dcaa-4955-a690-3b75afbb753f',
                 content: [
                     {
-                        content: 'abbbbbbbbb',
+                        content: 'you can also add ',
                         id: '5ed0ac2c-7fe2-4c2e-a3d4-e6d9034d3069',
+                        style: {
+                            'bold': false, 
+                            'italics': false,
+                            'underline': false,
+                            'code': false,
+                            'strikethrough': false,
+                            'color': '#000000',
+                            'link': undefined,
+                        }
+                    },
+                    {
+                        content: 'links',
+                        id: 'e9515b02-464b-41dd-8fee-be7ad3f3137c',
                         style: {
                             'bold': false, 
                             'italics': false,
