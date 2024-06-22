@@ -7,3 +7,11 @@ it also signifies an important way of thinking: the past is the past, focus on t
 ☾ ⋆*･ﾟ:⋆*･ﾟ:⠀ *⋆.*:･ﾟ .: ⋆*･ﾟ: .⋆ 
 
 ![i hope this loads](https://i.imgur.com/ceNkNCB.jpeg)
+
+![i hope this loads](https://i.imgur.com/nj7Lgxe.jpeg)
+
+![i hope this loads](https://i.imgur.com/kHqRHAI.jpeg)
+
+![i hope this loads](https://i.imgur.com/GnpTy4B.jpeg)
+
+![i hope this loads](https://i.imgur.com/tfX1zbS.jpeg)
