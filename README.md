@@ -6,4 +6,4 @@ it also signifies an important way of thinking: the past is the past, focus on t
 
 ☾ ⋆*･ﾟ:⋆*･ﾟ:⠀ *⋆.*:･ﾟ .: ⋆*･ﾟ: .⋆ 
 
-![i hope this loads](https://imgur.com/ceNkNCB)
+![i hope this loads](https://i.imgur.com/ceNkNCB.jpeg)
